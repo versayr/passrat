@@ -3,6 +3,7 @@ use rusqlite::{Connection, Error};
 
 pub fn init_databse() -> Result<Connection, Error> {
     let conn = Connection::open("vault.db").expect("Vault not found.");
+    let _ = conn.execute(&format!("PRAGMA key = '{}';", "password"), [],);
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS services (
