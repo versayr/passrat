@@ -22,6 +22,16 @@ enum Mode {
 }
 
 impl App {
+    pub fn new(password: String) -> Self {
+        Self {
+            exit: false,
+            mode: Mode::List,
+            conn: init_databse(password).expect("Failed to get db connection."),
+            selected_service: None,
+            selected_account: None,
+        }
+    }
+
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         terminal.draw(|frame| self.draw(frame))?;
 
@@ -116,18 +126,6 @@ impl App {
         let new_account = Account::default();
         self.selected_account = Some(new_account);
         self.mode = Mode::Edit;
-    }
-}
-
-impl Default for App {
-    fn default() -> Self {
-        Self {
-            exit: false,
-            mode: Mode::List,
-            conn: init_databse().expect("Failed to get db connection."),
-            selected_service: None,
-            selected_account: None,
-        }
     }
 }
 

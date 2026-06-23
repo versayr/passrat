@@ -9,7 +9,7 @@ mod db;
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
 
-    let mut app = App::default();
+    let mut app = App::new("password".into());
 
     let app_result = app.run(&mut terminal);
 
