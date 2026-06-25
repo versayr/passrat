@@ -1,14 +1,10 @@
 use std::vec;
 
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::Style,
-    text::{Line, Span},
-    widgets::{Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, Widget},
+    buffer::Buffer, layout::{Constraint, Direction, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
 };
 
-use crate::{db::get_services, models::Service, App};
+use crate::App;
 
 impl App {
     pub fn render_locked_mode(&mut self, area: Rect, buf: &mut Buffer) {
@@ -38,21 +34,21 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let mut services: Vec<Service> = vec![];
-
-        if let Some(conn) = &self.conn {
-            let mut service_list = get_services(conn).expect("Failed to get list of services.");
-            services.append(&mut service_list);
-        };
-
-        let list_items: Vec<ListItem> = services
-            .into_iter()
-            .map(|service| ListItem::new(Line::from(service.name)))
+        let list_items: Vec<ListItem> = self
+            .services
+            .list
+            .iter()
+            .map(|service| ListItem::new(Line::from(service.name.clone())))
             .collect();
 
-        let list = List::new(list_items);
+        let list = List::new(list_items)
+            .highlight_symbol(" > ")
+            .highlight_style(Style::new().add_modifier(Modifier::BOLD))
+            .highlight_spacing(HighlightSpacing::Always);
 
-        list.render(Block::inner(&block, area), buf);
+        StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
+
+        // list.render(Block::inner(&block, area), buf);
         block.render(area, buf);
     }
 
@@ -154,7 +150,7 @@ impl App {
 
         block.render(area, buf);
         header.render(main_layout[0], buf);
-        account_list.render(body_layout[0], buf);
+        StatefulWidget::render(account_list, body_layout[0], buf, &mut self.services.state);
         details.render(body_layout[1], buf);
     }
 

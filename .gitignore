@@ -2,4 +2,5 @@
 /debug
 .todo
 vault.db
+vault-backup.db
 scratch

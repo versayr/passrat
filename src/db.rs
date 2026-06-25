@@ -1,16 +1,26 @@
-use crate::models::*;
+use std::path::Path;
 use rusqlite::{Connection, Error};
 
-pub fn init_database(password: String) -> Result<Connection, Error> {
-    let conn = Connection::open("vault.db").expect("Vault not found.");
-    let _ = conn.execute(&format!("PRAGMA key = '{}';", password), [],);
+pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
+    let conn = Connection::open(path).expect("Vault not found.");
+    conn.pragma_update(None, "key", password)?;
+    // conn.execute("SELECT COUNT(*) FROM sqlite_master", [])?;
+    Ok(conn)
+}
 
-    conn.execute("SELECT id FROM services", [])?;
+pub fn init_database(path: &Path, password: &str) -> Result<Connection, Error> {
+    let conn = Connection::open(path).expect("Vault not found.");
+    conn.pragma_update(None, "key", password)?;
+
+    // for some reason, this line will cause the db to not be created if it doesn't exist
+    // however, without it, entering the wrong password causes a crash if the db does exist
+    // also, entering the wrong password causes the correct one to fail??
+    // conn.execute("SELECT COUNT(*) FROM sqlite_master", [])?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY,
-            service TEXT NOT NULL,
+            name TEXT NOT NULL,
             url TEXT
         )",
         [],
@@ -57,26 +67,4 @@ pub fn init_database(password: String) -> Result<Connection, Error> {
     .expect("Failed to create security question table.");
 
     Ok(conn)
-}
-
-pub fn get_services(conn: &Connection) -> Result<Vec<Service>, Error> {
-    let mut stmt = conn
-        .prepare("SELECT id, service, url FROM services ORDER BY service")
-        .expect("Failed to prepare statement");
-
-    let result = stmt.query_map([], |row| {
-        Ok(Service {
-            id: row.get(0).expect("Failed to get service id."),
-            name: row.get(1).expect("Failed to get service name."),
-            url: row.get(2).expect("Failed to get service url."),
-        })
-    })?;
-
-    let mut services: Vec<Service> = vec![];
-
-    for service in result.into_iter() {
-        services.push(service?);
-    }
-
-    Ok(services)
 }
