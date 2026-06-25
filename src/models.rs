@@ -22,6 +22,7 @@ pub struct Account {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct SecurityQuestion {
     pub id: Option<u16>,
     pub account_id: u16,
@@ -30,6 +31,7 @@ pub struct SecurityQuestion {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Shortcut {
     pub id: Option<u16>,
     pub account_id: u16,

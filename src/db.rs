@@ -1,9 +1,11 @@
 use crate::models::*;
 use rusqlite::{Connection, Error};
 
-pub fn init_databse(password: String) -> Result<Connection, Error> {
+pub fn init_database(password: String) -> Result<Connection, Error> {
     let conn = Connection::open("vault.db").expect("Vault not found.");
     let _ = conn.execute(&format!("PRAGMA key = '{}';", password), [],);
+
+    conn.execute("SELECT id FROM services", [])?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS services (

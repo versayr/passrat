@@ -3,13 +3,34 @@ use std::vec;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Direction, Layout, Rect},
+    style::Style,
     text::{Line, Span},
     widgets::{Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, Widget},
 };
 
-use crate::{db::get_services, App};
+use crate::{db::get_services, models::Service, App};
 
 impl App {
+    pub fn render_locked_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let title = Line::from(" Login Screen ");
+        let block = Block::bordered()
+            .title(title)
+            .padding(Padding::uniform(1))
+            .border_type(BorderType::Rounded);
+
+        let input = Paragraph::new(vec![
+            Line::from("Enter Password (Or Set Password If DB Doesn't Exist)"),
+            Line::from(vec![
+                Span::from("*".repeat(self.password.len())),
+                Span::styled(" ", Style::reversed(Style::default())),
+            ]),
+            Line::from(self.alert.clone()),
+        ]);
+
+        input.render(Block::inner(&block, area), buf);
+        block.render(area, buf);
+    }
+
     pub fn render_list_mode(&mut self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" List Mode ");
         let block = Block::bordered()
@@ -17,7 +38,12 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let services = get_services(&self.conn).expect("Failed to get services.");
+        let mut services: Vec<Service> = vec![];
+
+        if let Some(conn) = &self.conn {
+            let mut service_list = get_services(conn).expect("Failed to get list of services.");
+            services.append(&mut service_list);
+        };
 
         let list_items: Vec<ListItem> = services
             .into_iter()
