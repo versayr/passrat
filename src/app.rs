@@ -137,6 +137,7 @@ impl App {
                         .selected()
                         .expect("No service is selected.")].clone(),
                 );
+                let _ = self.get_accounts();
                 self.mode = Mode::View;
             }
             _ => {}
@@ -261,7 +262,7 @@ impl App {
             .as_mut()
             .expect("Failed to connect to database.")
             .prepare(&format!(
-                "SELECT * FROM accounts ORDER BY username WHERE service_id = {}",
+                "SELECT * FROM accounts WHERE service_id = {} ORDER BY username",
                 service_id
             ))
             .expect("Failed to prepare statement.");
@@ -286,6 +287,8 @@ impl App {
         for account in result.into_iter() {
             self.accounts.list.push(account?);
         }
+
+        self.accounts.state.select(Some(0));
 
         Ok(())
     }

@@ -114,9 +114,9 @@ impl App {
             .collect();
 
         let account_list = List::new(accounts)
-            .highlight_symbol(">>")
-            .highlight_spacing(HighlightSpacing::WhenSelected)
-            .block(account_block);
+            .highlight_symbol(" > ")
+            .highlight_style(Style::new().add_modifier(Modifier::BOLD))
+            .highlight_spacing(HighlightSpacing::Always);
 
         let details_block = Block::bordered().border_type(BorderType::Double);
 
@@ -172,7 +172,13 @@ impl App {
         let details = Paragraph::new(detail_items).block(details_block);
 
         header.render(main_layout[0], buf);
-        StatefulWidget::render(account_list, body_layout[0], buf, &mut self.accounts.state);
+        StatefulWidget::render(
+            account_list,
+            Block::inner(&account_block, body_layout[0]),
+            buf,
+            &mut self.accounts.state,
+        );
+        account_block.render(body_layout[0], buf);
         details.render(body_layout[1], buf);
         block.render(area, buf);
     }
