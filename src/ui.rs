@@ -1,7 +1,14 @@
 use std::vec;
 
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Direction, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, StatefulWidget, Widget},
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style},
+    text::{Line, Span},
+    widgets::{
+        Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, StatefulWidget,
+        Widget,
+    },
 };
 
 use crate::App;
@@ -46,7 +53,12 @@ impl App {
             .highlight_style(Style::new().add_modifier(Modifier::BOLD))
             .highlight_spacing(HighlightSpacing::Always);
 
-        StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
+        StatefulWidget::render(
+            list,
+            Block::inner(&block, area),
+            buf,
+            &mut self.services.state,
+        );
 
         // list.render(Block::inner(&block, area), buf);
         block.render(area, buf);
@@ -79,21 +91,32 @@ impl App {
 
         let header_block = Block::bordered().border_type(BorderType::Double);
 
-        let header = Paragraph::new(vec![
-            Line::from("SERVICE NAME"),
-            Line::from("service url (optional)"),
-        ])
-        .block(header_block);
+        let service = self
+            .selected_service
+            .as_ref()
+            .expect("No service is selected.");
+
+        let mut lines = vec![Line::from(format!(" {} ", service.name.clone()))];
+
+        if let Some(url) = &service.url {
+            lines.push(Line::from(format!(" {} ", url.clone())));
+        }
+
+        let header = Paragraph::new(lines).block(header_block);
 
         let account_block = Block::bordered().border_type(BorderType::Double);
 
-        let account_list = List::new(vec![
-            ListItem::from("Account 1"),
-            ListItem::from("Account 2"),
-        ])
-        .highlight_symbol(">>")
-        .highlight_spacing(HighlightSpacing::WhenSelected)
-        .block(account_block);
+        let accounts: Vec<ListItem> = self
+            .accounts
+            .list
+            .iter()
+            .map(|account| ListItem::new(Line::from(account.username.clone())))
+            .collect();
+
+        let account_list = List::new(accounts)
+            .highlight_symbol(">>")
+            .highlight_spacing(HighlightSpacing::WhenSelected)
+            .block(account_block);
 
         let details_block = Block::bordered().border_type(BorderType::Double);
 
@@ -148,10 +171,10 @@ impl App {
 
         let details = Paragraph::new(detail_items).block(details_block);
 
-        block.render(area, buf);
         header.render(main_layout[0], buf);
-        StatefulWidget::render(account_list, body_layout[0], buf, &mut self.services.state);
+        StatefulWidget::render(account_list, body_layout[0], buf, &mut self.accounts.state);
         details.render(body_layout[1], buf);
+        block.render(area, buf);
     }
 
     pub fn render_help_mode(&mut self, area: Rect, buf: &mut Buffer) {

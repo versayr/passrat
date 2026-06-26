@@ -13,23 +13,32 @@ use crate::{
     models::{Account, Service},
 };
 
+#[derive(Debug)]
 pub struct App {
     exit: bool,
     locked: bool,
+    mode: Mode,
     pub password: String,
     pub alert: String,
-    mode: Mode,
     pub conn: Option<Connection>,
-    selected_service: Option<Service>,
-    selected_account: Option<Account>,
     pub services: ServiceList,
+    pub accounts: AccountList,
+    pub selected_service: Option<Service>,
 }
 
+#[derive(Debug)]
 pub struct ServiceList {
     pub list: Vec<Service>,
     pub state: ListState,
 }
 
+#[derive(Debug)]
+pub struct AccountList {
+    pub list: Vec<Account>,
+    pub state: ListState,
+}
+
+#[derive(Debug)]
 enum Mode {
     List,
     View,
@@ -47,12 +56,15 @@ impl App {
             alert: "".into(),
             mode: Mode::List,
             conn: None,
-            selected_service: None,
-            selected_account: None,
             services: ServiceList {
                 list: vec![],
                 state: ListState::default(),
             },
+            accounts: AccountList {
+                list: vec![],
+                state: ListState::default(),
+            },
+            selected_service: None,
         }
     }
 
@@ -117,7 +129,16 @@ impl App {
             KeyCode::Char('e') => self.mode = Mode::Edit,
             KeyCode::Char('n') => self.new_service(),
             KeyCode::Char('\\') => self.mode = Mode::Shortcuts,
-            KeyCode::Enter => self.mode = Mode::View,
+            KeyCode::Enter => {
+                self.selected_service = Some(
+                    self.services.list[self
+                        .services
+                        .state
+                        .selected()
+                        .expect("No service is selected.")].clone(),
+                );
+                self.mode = Mode::View;
+            }
             _ => {}
         }
     }
@@ -126,6 +147,8 @@ impl App {
         match event.code {
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Char('h') | KeyCode::Char('?') => self.mode = Mode::Help,
+            KeyCode::Char('j') | KeyCode::Down => self.accounts.state.select_next(),
+            KeyCode::Char('k') | KeyCode::Up => self.accounts.state.select_previous(),
             KeyCode::Esc => self.mode = Mode::List,
             KeyCode::Char('e') => self.mode = Mode::Edit,
             KeyCode::Char('n') => self.new_account(),
@@ -159,6 +182,7 @@ impl App {
     }
 
     fn submit_password(&mut self) {
+        // TODO
         // add a check that to see if the db exists
         // if yes, then:
         //   get a connection using the password, or
@@ -173,7 +197,10 @@ impl App {
                 self.password = "".into();
                 self.alert = "".into();
                 self.locked = false;
-                self.get_services().expect("Failed to get list of services.");
+                self.get_services()
+                    .expect("Failed to get list of services.");
+                // TODO
+                // handle empty services list?
                 self.services.state.select(Some(0));
             } else {
                 self.password = "".into();
@@ -188,14 +215,10 @@ impl App {
     }
 
     fn new_service(&mut self) {
-        let new_service = Service::default();
-        self.selected_service = Some(new_service);
         self.mode = Mode::Edit;
     }
 
     fn new_account(&mut self) {
-        let new_account = Account::default();
-        self.selected_account = Some(new_account);
         self.mode = Mode::Edit;
     }
 
@@ -219,6 +242,49 @@ impl App {
 
         for service in result.into_iter() {
             self.services.list.push(service?);
+        }
+
+        Ok(())
+    }
+
+    pub fn get_accounts(&mut self) -> Result<(), Error> {
+        let service_id = self.services.list[self
+            .services
+            .state
+            .selected()
+            .expect("No service selected.")]
+        .id
+        .expect("Failed to get service id.");
+
+        let mut stmt = self
+            .conn
+            .as_mut()
+            .expect("Failed to connect to database.")
+            .prepare(&format!(
+                "SELECT * FROM accounts ORDER BY username WHERE service_id = {}",
+                service_id
+            ))
+            .expect("Failed to prepare statement.");
+
+        let result = stmt.query_map([], |row| {
+            Ok(Account {
+                id: row.get(0).expect("Failed to get id."),
+                service_id: row.get(1).expect("Failed to get service id."),
+                username: row.get(2).expect("Failed to get username."),
+                last_change: row.get(3).expect("Failed to get last change."),
+                account_creation_date: row.get(4).expect("Failed to get account creation date."),
+                email: row.get(5).expect("Failed to get email."),
+                password: row.get(6).expect("Failed to get password."),
+                access_token: row.get(7).expect("Failed to get access token."),
+                pin: row.get(8).expect("Failed to get pin."),
+                passcode: row.get(9).expect("Failed to get passcode."),
+            })
+        })?;
+
+        self.accounts.list.clear();
+
+        for account in result.into_iter() {
+            self.accounts.list.push(account?);
         }
 
         Ok(())
