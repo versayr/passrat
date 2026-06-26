@@ -1,11 +1,7 @@
 use std::vec;
 
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
-    text::{Line, Span},
-    widgets::{
+    buffer::Buffer, layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{
         Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, StatefulWidget,
         Widget,
     },
@@ -60,7 +56,6 @@ impl App {
             &mut self.services.state,
         );
 
-        // list.render(Block::inner(&block, area), buf);
         block.render(area, buf);
     }
 
@@ -89,7 +84,10 @@ impl App {
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(main_layout[1]);
 
-        let header_block = Block::bordered().border_type(BorderType::Double);
+        let header_block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ SERVICE DETAILS ] ]");
 
         let service = self
             .selected_service
@@ -104,7 +102,10 @@ impl App {
 
         let header = Paragraph::new(lines).block(header_block);
 
-        let account_block = Block::bordered().border_type(BorderType::Double);
+        let account_block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ ACCOUNTS ] ]");
 
         let accounts: Vec<ListItem> = self
             .accounts
@@ -115,13 +116,20 @@ impl App {
 
         let account_list = List::new(accounts)
             .highlight_symbol(" > ")
-            .highlight_style(Style::new().add_modifier(Modifier::BOLD))
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
             .highlight_spacing(HighlightSpacing::Always);
 
-        let details_block = Block::bordered().border_type(BorderType::Double);
+        let details_block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ ACCOUNT DETAILS ] ]")
+            .padding(Padding::left(1));
 
         let detail_items = vec![
-            Line::from("[ [ ACCOUNT DETAILS ] ]"),
             Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Username", width = 30)),
                 Span::raw("NAME"),
