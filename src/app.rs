@@ -26,13 +26,13 @@ pub struct App {
     pub selected_service: Option<Service>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ServiceList {
     pub list: Vec<Service>,
     pub state: ListState,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AccountList {
     pub list: Vec<Account>,
     pub state: ListState,
@@ -56,14 +56,8 @@ impl App {
             alert: "".into(),
             mode: Mode::List,
             conn: None,
-            services: ServiceList {
-                list: vec![],
-                state: ListState::default(),
-            },
-            accounts: AccountList {
-                list: vec![],
-                state: ListState::default(),
-            },
+            services: ServiceList::default(),
+            accounts: AccountList::default(),
             selected_service: None,
         }
     }
@@ -84,7 +78,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
-        match event::read().expect("Failed to parse input.") {
+        match event::read().expect("Failed to p&selfarse input.") {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 self.handle_key_events(key_event);
             }

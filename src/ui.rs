@@ -23,7 +23,11 @@ impl App {
 
         let layout = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![Constraint::Fill(1), Constraint::Length(6), Constraint::Fill(4)])
+            .constraints(vec![
+                Constraint::Fill(1),
+                Constraint::Length(6),
+                Constraint::Fill(4),
+            ])
             .split(Block::inner(&block, area));
 
         let input_block = Block::bordered()
@@ -51,28 +55,7 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let list_items: Vec<ListItem> = self
-            .services
-            .list
-            .iter()
-            .map(|service| ListItem::new(Line::from(service.name.clone())))
-            .collect();
-
-        let list = List::new(list_items)
-            .highlight_symbol(" > ")
-            .highlight_style(
-                Style::new()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED),
-            )
-            .highlight_spacing(HighlightSpacing::Always);
-
-        StatefulWidget::render(
-            list,
-            Block::inner(&block, area),
-            buf,
-            &mut self.services.state,
-        );
+        self.render_service_list(Block::inner(&block, area), buf);
 
         block.render(area, buf);
     }
@@ -102,7 +85,53 @@ impl App {
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(main_layout[1]);
 
-        let header_block = Block::bordered()
+        self.render_service_details(main_layout[0], buf);
+        self.render_account_list(body_layout[0], buf);
+        self.render_account_details(body_layout[1], buf);
+
+        block.render(area, buf);
+    }
+
+    pub fn render_help_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let title = Line::from(" Help Mode ");
+        let block = Block::bordered()
+            .title(title)
+            .border_type(BorderType::Rounded);
+
+        block.render(area, buf);
+    }
+
+    pub fn render_shortcut_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let title = Line::from(" Shortcut Mode ");
+        let block = Block::bordered()
+            .title(title)
+            .border_type(BorderType::Rounded);
+
+        block.render(area, buf);
+    }
+
+    fn render_service_list(&mut self, area: Rect, buf: &mut Buffer) {
+        let list_items: Vec<ListItem> = self
+            .services
+            .list
+            .iter()
+            .map(|service| ListItem::new(Line::from(service.name.clone())))
+            .collect();
+
+        let list = List::new(list_items)
+            .highlight_symbol(" > ")
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
+            .highlight_spacing(HighlightSpacing::Always);
+
+        StatefulWidget::render(list, area, buf, &mut self.services.state);
+    }
+
+    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ SERVICE DETAILS ] ]");
@@ -112,15 +141,19 @@ impl App {
             .as_ref()
             .expect("No service is selected.");
 
-        let mut lines = vec![Line::from(format!(" {} ", service.name.clone()))];
+        let mut service_details = vec![Line::from(format!(" {} ", service.name.clone()))];
 
         if let Some(url) = &service.url {
-            lines.push(Line::from(format!(" {} ", url.clone())));
+            service_details.push(Line::from(format!(" {} ", url.clone())));
         }
 
-        let header = Paragraph::new(lines).block(header_block);
+        let header = Paragraph::new(service_details).block(block);
 
-        let account_block = Block::bordered()
+        header.render(area, buf);
+    }
+
+    fn render_account_list(&mut self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNTS ] ]");
@@ -139,8 +172,13 @@ impl App {
                     .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED),
             )
-            .highlight_spacing(HighlightSpacing::Always);
+            .highlight_spacing(HighlightSpacing::Always)
+            .block(block);
 
+        StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
+    }
+
+    fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
         let details_block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
@@ -197,33 +235,6 @@ impl App {
 
         let details = Paragraph::new(detail_items).block(details_block);
 
-        header.render(main_layout[0], buf);
-        StatefulWidget::render(
-            account_list,
-            Block::inner(&account_block, body_layout[0]),
-            buf,
-            &mut self.accounts.state,
-        );
-        account_block.render(body_layout[0], buf);
-        details.render(body_layout[1], buf);
-        block.render(area, buf);
-    }
-
-    pub fn render_help_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" Help Mode ");
-        let block = Block::bordered()
-            .title(title)
-            .border_type(BorderType::Rounded);
-
-        block.render(area, buf);
-    }
-
-    pub fn render_shortcut_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" Shortcut Mode ");
-        let block = Block::bordered()
-            .title(title)
-            .border_type(BorderType::Rounded);
-
-        block.render(area, buf);
+        details.render(area, buf);
     }
 }
