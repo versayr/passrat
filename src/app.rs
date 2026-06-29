@@ -78,7 +78,7 @@ impl App {
     }
 
     fn handle_events(&mut self) -> io::Result<()> {
-        match event::read().expect("Failed to p&selfarse input.") {
+        match event::read().expect("Failed to parse input.") {
             Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
                 self.handle_key_events(key_event);
             }
@@ -129,7 +129,8 @@ impl App {
                         .services
                         .state
                         .selected()
-                        .expect("No service is selected.")].clone(),
+                        .expect("No service is selected.")]
+                    .clone(),
                 );
                 let _ = self.get_accounts();
                 self.mode = Mode::View;
@@ -261,20 +262,7 @@ impl App {
             ))
             .expect("Failed to prepare statement.");
 
-        let result = stmt.query_map([], |row| {
-            Ok(Account {
-                id: row.get(0).expect("Failed to get id."),
-                service_id: row.get(1).expect("Failed to get service id."),
-                username: row.get(2).expect("Failed to get username."),
-                last_change: row.get(3).expect("Failed to get last change."),
-                account_creation_date: row.get(4).expect("Failed to get account creation date."),
-                email: row.get(5).expect("Failed to get email."),
-                password: row.get(6).expect("Failed to get password."),
-                access_token: row.get(7).expect("Failed to get access token."),
-                pin: row.get(8).expect("Failed to get pin."),
-                passcode: row.get(9).expect("Failed to get passcode."),
-            })
-        })?;
+        let result = stmt.query_map([], Account::from_row)?;
 
         self.accounts.list.clear();
 

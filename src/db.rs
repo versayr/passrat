@@ -1,5 +1,7 @@
 use std::path::Path;
-use rusqlite::{Connection, Error};
+use rusqlite::{Connection, Error, Row};
+
+use crate::models::Account;
 
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
     let conn = Connection::open(path).expect("Vault not found.");
@@ -67,4 +69,21 @@ pub fn init_database(path: &Path, password: &str) -> Result<Connection, Error> {
     .expect("Failed to create security question table.");
 
     Ok(conn)
+}
+
+impl Account {
+    pub fn from_row(row: &Row<'_>) -> Result<Self, Error> {
+        Ok(Account {
+            id: row.get("id").expect("Failed to get row id."),
+            service_id: row.get("service_id").expect("Failed to get service id."),
+            username: row.get("username").expect("Failed to get username."),
+            email: row.get("email").expect("Failed to get email."),
+            password: row.get("password").expect("Failed to get password."),
+            access_token: row.get("access_token").expect("Failed to get access token."),
+            last_change: row.get("last_change").expect("Failed to get last change."),
+            account_creation_date: row.get("account_creation_date").expect("Failed to get account creation date."),
+            pin: row.get("pin").expect("Failed to get pin."),
+            passcode: row.get("passcode").expect("Failed to get passcode."),
+        })
+    }
 }
