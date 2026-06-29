@@ -2,6 +2,7 @@
 /debug
 .todo
 vault.db
+old-vault.db
 vault-backup.db
 scratch
 log

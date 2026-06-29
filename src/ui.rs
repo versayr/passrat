@@ -1,7 +1,11 @@
 use std::vec;
 
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{
+    buffer::Buffer,
+    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
+    style::{Modifier, Style},
+    text::{Line, Span},
+    widgets::{
         Block, BorderType, HighlightSpacing, List, ListItem, Padding, Paragraph, StatefulWidget,
         Widget,
     },
@@ -17,16 +21,26 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
+        let layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Fill(1), Constraint::Length(6), Constraint::Fill(4)])
+            .split(Block::inner(&block, area));
+
+        let input_block = Block::bordered()
+            .title(Line::from("[ [ ENTER PASSPHRASE ] ]"))
+            .padding(Padding::uniform(1))
+            .border_type(BorderType::Double);
+
         let input = Paragraph::new(vec![
-            Line::from("Enter Password (Or Set Password If DB Doesn't Exist)"),
             Line::from(vec![
                 Span::from("*".repeat(self.password.len())),
                 Span::styled(" ", Style::reversed(Style::default())),
             ]),
             Line::from(self.alert.clone()),
-        ]);
+        ])
+        .block(input_block);
 
-        input.render(Block::inner(&block, area), buf);
+        input.render(layout[1], buf);
         block.render(area, buf);
     }
 
@@ -46,7 +60,11 @@ impl App {
 
         let list = List::new(list_items)
             .highlight_symbol(" > ")
-            .highlight_style(Style::new().add_modifier(Modifier::BOLD))
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
             .highlight_spacing(HighlightSpacing::Always);
 
         StatefulWidget::render(
