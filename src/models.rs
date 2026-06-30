@@ -1,3 +1,4 @@
+use chrono::Local;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -43,8 +44,8 @@ impl Default for Service {
     fn default() -> Self {
         Self {
             id: None,
-            name: "".into(),
-            url: Some("".into()),
+            name: "Test".into(),
+            url: Some("https://www.test.org".into()),
         }
     }
 }
@@ -55,7 +56,7 @@ impl Default for Account {
             id: None,
             service_id: 1,
             username: "Bruce".into(),
-            last_change: "".into(),
+            last_change: Local::now().format("%A, %B %-dth, %Y").to_string(),
             account_creation_date: "".into(),
             email: None,
             password: None,

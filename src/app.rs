@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{ListState, Widget},
     DefaultTerminal, Frame,
 };
-use rusqlite::{Connection, Error};
+use rusqlite::{params, Connection, Error};
 use std::{io, path::Path};
 
 use crate::{
@@ -121,7 +121,7 @@ impl App {
             KeyCode::Char('j') | KeyCode::Down => self.services.state.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.services.state.select_previous(),
             KeyCode::Char('e') => self.mode = Mode::Edit,
-            KeyCode::Char('n') => self.new_service(),
+            KeyCode::Char('n') => self.add_service().expect("Failed to add service."),
             KeyCode::Char('\\') => self.mode = Mode::Shortcuts,
             KeyCode::Enter => {
                 self.selected_service = Some(
@@ -147,7 +147,7 @@ impl App {
             KeyCode::Char('k') | KeyCode::Up => self.accounts.state.select_previous(),
             KeyCode::Esc => self.mode = Mode::List,
             KeyCode::Char('e') => self.mode = Mode::Edit,
-            KeyCode::Char('n') => self.new_account(),
+            KeyCode::Char('n') => self.add_account().expect("Failed to add account."),
             _ => {}
         }
     }
@@ -210,14 +210,6 @@ impl App {
         }
     }
 
-    fn new_service(&mut self) {
-        self.mode = Mode::Edit;
-    }
-
-    fn new_account(&mut self) {
-        self.mode = Mode::Edit;
-    }
-
     pub fn get_services(&mut self) -> Result<(), Error> {
         let mut stmt = self
             .conn
@@ -274,6 +266,50 @@ impl App {
 
         Ok(())
     }
+
+    fn add_service(&mut self) -> Result<(), Error> {
+        let service = Service::default();
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "INSERT INTO services (name, url) VALUES (?1, ?2)",
+            params![service.name, service.url],
+        );
+
+        self.get_services()
+            .expect("Failed to refresh service list.");
+        Ok(())
+    }
+
+    //     fn update_service(&mut self) -> Result<(), Error> {
+    //
+    //     }
+    //
+    //     fn remove_service(&mut self) -> Result<(), Error> {
+    //
+    //     }
+
+    fn add_account(&mut self) -> Result<(), Error> {
+        let account = Account::default();
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "INSERT INTO accounts (service_id, username, last_change, account_creation_date, email, password, access_token, pin, passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![&self.selected_service.as_ref().expect("No selected service.").id, account.username, account.last_change, account.account_creation_date, account.email, account.password, account.access_token, account.pin, account.passcode],
+        );
+
+        self.get_accounts()
+            .expect("Failed to refresh accounts list.");
+        Ok(())
+    }
+
+    //     fn update_account(&mut self) -> Result<(), Error> {
+    //
+    //     }
+    //
+    //     fn remove_account(&mut self) -> Result<(), Error> {
+    //
+    //     }
 }
 
 impl Widget for &mut App {

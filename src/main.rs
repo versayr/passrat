@@ -3,9 +3,9 @@ use std::panic::{self, AssertUnwindSafe};
 use crate::app::App;
 
 mod app;
-mod ui;
-mod models;
 mod db;
+mod models;
+mod ui;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -27,6 +27,6 @@ fn main() -> color_eyre::Result<()> {
         Err(err) => {
             eprintln!("App State: {app:#?}");
             std::panic::resume_unwind(err)
-        },
+        }
     }
 }

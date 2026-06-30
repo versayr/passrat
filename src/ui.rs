@@ -187,70 +187,75 @@ impl App {
 
         let mut detail_items = vec![];
 
-        let account = &self.accounts.list[self
-            .accounts
-            .state
-            .selected()
-            .expect("No account selected.")];
+        if self.accounts.list.is_empty() {
+            detail_items.push(Line::from("No accounts found for this service"));
+            detail_items.push(Line::from("Press 'n' to add a new one"));
+        } else {
+            let account = &self.accounts.list[self
+                .accounts
+                .state
+                .selected()
+                .expect("No account selected.")];
 
-        if !account.username.is_empty() {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Username", width = 30)),
-                account.username.clone().into(),
-            ]));
-        }
-
-        if let Some(email) = &account.email {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Email", width = 30)),
-                email.into(),
-            ]));
-        }
-
-        if let Some(_password) = &account.password {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Password", width = 30)),
-                format!("{{{}}}", "*").into(),
-            ]));
-        }
-
-        if let Some(access_token) = &account.access_token && !access_token.is_empty() {
+            if !account.username.is_empty() {
                 detail_items.push(Line::from(vec![
-                        Span::raw(format!("{:.<width$}", "Access Token", width = 30)),
-                        access_token.into(),
+                    Span::raw(format!("{:.<width$}", "Username", width = 30)),
+                    account.username.clone().into(),
                 ]));
+            }
+
+            if let Some(email) = &account.email {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Email", width = 30)),
+                    email.into(),
+                ]));
+            }
+
+            if let Some(_password) = &account.password {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Password", width = 30)),
+                    format!("{{{}}}", "*").into(),
+                ]));
+            }
+
+            if let Some(access_token) = &account.access_token
+                && !access_token.is_empty()
+            {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Access Token", width = 30)),
+                    access_token.into(),
+                ]));
+            }
+
+            if let Some(pin) = &account.pin {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "PIN", width = 30)),
+                    pin.into(),
+                ]));
+            }
+
+            if let Some(passcode) = &account.passcode {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Passcode", width = 30)),
+                    passcode.into(),
+                ]));
+            }
+
+            if !account.last_change.is_empty() {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Last Change", width = 30)),
+                    Span::raw(account.last_change.to_string()),
+                ]));
+            }
+
+            if !account.account_creation_date.is_empty() {
+                detail_items.push(Line::from(vec![
+                    Span::raw(format!("{:.<width$}", "Account Created", width = 30)),
+                    Span::raw(account.account_creation_date.to_string()),
+                ]));
+            }
         }
 
-        if let Some(pin) = &account.pin {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "PIN", width = 30)),
-                pin.into(),
-            ]));
-        }
-
-        if let Some(passcode) = &account.passcode {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Passcode", width = 30)),
-                passcode.into(),
-            ]));
-        }
-
-        if !account.last_change.is_empty() {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Last Change", width = 30)),
-                Span::raw(account.last_change.to_string()),
-            ]));
-        }
-
-        if !account.account_creation_date.is_empty() {
-            detail_items.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Account Created", width = 30)),
-                Span::raw(account.account_creation_date.to_string()),
-            ]));
-        }
-
-        let details = Paragraph::new(detail_items).block(details_block);
-
-        details.render(area, buf);
+        Paragraph::new(detail_items).block(details_block).render(area, buf);
     }
 }
