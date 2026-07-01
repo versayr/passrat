@@ -1,4 +1,5 @@
-use chrono::Local;
+use chrono::{Datelike, Local};
+use ordinal::ToOrdinal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,11 +53,20 @@ impl Default for Service {
 
 impl Default for Account {
     fn default() -> Self {
+        let now = Local::now();
+        let last_change = format!(
+            "{}, {} {}, {}",
+            now.format("%A"),
+            now.format("%B"),
+            now.day().to_ordinal_string(),
+            now.format("%Y")
+        );
+
         Self {
             id: None,
             service_id: 1,
             username: "Bruce".into(),
-            last_change: Local::now().format("%A, %B %-dth, %Y").to_string(),
+            last_change: last_change,
             account_creation_date: "".into(),
             email: None,
             password: None,

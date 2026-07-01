@@ -924,6 +924,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordinal"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04f7ff16c3a0599da7939ad0ae9300414ca1115a7f552574bb269638a1e0576d"
+
+[[package]]
 name = "owo-colors"
 version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -959,6 +965,7 @@ dependencies = [
  "chrono",
  "color-eyre",
  "crossterm",
+ "ordinal",
  "ratatui",
  "rusqlite",
  "serde",

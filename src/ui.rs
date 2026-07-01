@@ -30,6 +30,15 @@ impl App {
             ])
             .split(Block::inner(&block, area));
 
+        let layout_inner = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![
+                Constraint::Fill(1),
+                Constraint::Length(60),
+                Constraint::Fill(1),
+            ])
+            .split(layout[1]);
+
         let input_block = Block::bordered()
             .title(Line::from("[ [ ENTER PASSPHRASE ] ]"))
             .padding(Padding::uniform(1))
@@ -44,7 +53,7 @@ impl App {
         ])
         .block(input_block);
 
-        input.render(layout[1], buf);
+        input.render(layout_inner[1], buf);
         block.render(area, buf);
     }
 
@@ -199,21 +208,21 @@ impl App {
 
             if !account.username.is_empty() {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Username", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Username", width = 15)),
                     account.username.clone().into(),
                 ]));
             }
 
             if let Some(email) = &account.email {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Email", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Email", width = 15)),
                     email.into(),
                 ]));
             }
 
             if let Some(_password) = &account.password {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Password", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Password", width = 15)),
                     format!("{{{}}}", "*").into(),
                 ]));
             }
@@ -222,40 +231,42 @@ impl App {
                 && !access_token.is_empty()
             {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Access Token", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
                     access_token.into(),
                 ]));
             }
 
             if let Some(pin) = &account.pin {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "PIN", width = 30)),
+                    Span::raw(format!("{:.<width$}", "PIN", width = 15)),
                     pin.into(),
                 ]));
             }
 
             if let Some(passcode) = &account.passcode {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Passcode", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
                     passcode.into(),
                 ]));
             }
 
             if !account.last_change.is_empty() {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Last Change", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
                     Span::raw(account.last_change.to_string()),
                 ]));
             }
 
             if !account.account_creation_date.is_empty() {
                 detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Account Created", width = 30)),
+                    Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
                     Span::raw(account.account_creation_date.to_string()),
                 ]));
             }
         }
 
-        Paragraph::new(detail_items).block(details_block).render(area, buf);
+        Paragraph::new(detail_items)
+            .block(details_block)
+            .render(area, buf);
     }
 }

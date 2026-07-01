@@ -1,11 +1,11 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{
+    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
     widgets::{ListState, Widget},
-    DefaultTerminal, Frame,
 };
-use rusqlite::{params, Connection, Error};
+use rusqlite::{Connection, Error, params};
 use std::{io, path::Path};
 
 use crate::{
@@ -294,8 +294,31 @@ impl App {
         let conn = self.conn.as_mut().expect("Failed to get connection.");
 
         let _ = conn.execute(
-            "INSERT INTO accounts (service_id, username, last_change, account_creation_date, email, password, access_token, pin, passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![&self.selected_service.as_ref().expect("No selected service.").id, account.username, account.last_change, account.account_creation_date, account.email, account.password, account.access_token, account.pin, account.passcode],
+            "INSERT INTO accounts (
+            service_id,
+            username,
+            last_change,
+            account_creation_date,
+            email,
+            password,
+            access_token,
+            pin,
+            passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                &self
+                    .selected_service
+                    .as_ref()
+                    .expect("No selected service.")
+                    .id,
+                account.username,
+                account.last_change,
+                account.account_creation_date,
+                account.email,
+                account.password,
+                account.access_token,
+                account.pin,
+                account.passcode
+            ],
         );
 
         self.get_accounts()
