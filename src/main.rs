@@ -4,6 +4,7 @@ use crate::app::App;
 
 mod app;
 mod db;
+mod helpers;
 mod models;
 mod ui;
 

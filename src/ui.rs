@@ -65,7 +65,6 @@ impl App {
             .border_type(BorderType::Rounded);
 
         self.render_service_list(Block::inner(&block, area), buf);
-
         block.render(area, buf);
     }
 
@@ -120,23 +119,15 @@ impl App {
     }
 
     fn render_service_list(&mut self, area: Rect, buf: &mut Buffer) {
-        let list_items: Vec<ListItem> = self
-            .services
-            .list
-            .iter()
-            .map(|service| ListItem::new(Line::from(service.name.clone())))
-            .collect();
-
-        let list = List::new(list_items)
-            .highlight_symbol(" > ")
-            .highlight_style(
-                Style::new()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED),
-            )
-            .highlight_spacing(HighlightSpacing::Always);
-
-        StatefulWidget::render(list, area, buf, &mut self.services.state);
+        match self.services.list.is_empty() {
+            true => {
+                Widget::render(self.construct_empty_services_alert(), area, buf);
+            },
+            false => {
+                let list = self.construct_service_list();
+                StatefulWidget::render(list, area, buf, &mut self.services.state);
+            }
+        }
     }
 
     fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
@@ -187,86 +178,134 @@ impl App {
         StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
     }
 
-    fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
+    fn render_account_details(&self, area: Rect, buf: &mut Buffer) {
         let details_block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNT DETAILS ] ]")
             .padding(Padding::left(1));
 
-        let mut detail_items = vec![];
-
-        if self.accounts.list.is_empty() {
-            detail_items.push(Line::from("No accounts found for this service"));
-            detail_items.push(Line::from("Press 'n' to add a new one"));
-        } else {
-            let account = &self.accounts.list[self
-                .accounts
-                .state
-                .selected()
-                .expect("No account selected.")];
-
-            if !account.username.is_empty() {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Username", width = 15)),
-                    account.username.clone().into(),
-                ]));
+        match self.accounts.list.is_empty() {
+            true => {
+                Widget::render(
+                    self.construct_empty_accounts_alert().block(details_block),
+                    area,
+                    buf,
+                );
             }
-
-            if let Some(email) = &account.email {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Email", width = 15)),
-                    email.into(),
-                ]));
+            false => {
+                Widget::render(
+                    self.construct_account_details().block(details_block),
+                    area,
+                    buf,
+                );
             }
+        };
+    }
 
-            if let Some(_password) = &account.password {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Password", width = 15)),
-                    format!("{{{}}}", "*").into(),
-                ]));
-            }
+    fn construct_account_details(&self) -> List<'_> {
+        let mut lines = vec![];
 
-            if let Some(access_token) = &account.access_token
-                && !access_token.is_empty()
-            {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
-                    access_token.into(),
-                ]));
-            }
+        let account = &self.accounts.list[self
+            .accounts
+            .state
+            .selected()
+            .expect("No account selected.")];
 
-            if let Some(pin) = &account.pin {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "PIN", width = 15)),
-                    pin.into(),
-                ]));
-            }
-
-            if let Some(passcode) = &account.passcode {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
-                    passcode.into(),
-                ]));
-            }
-
-            if !account.last_change.is_empty() {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
-                    Span::raw(account.last_change.to_string()),
-                ]));
-            }
-
-            if !account.account_creation_date.is_empty() {
-                detail_items.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
-                    Span::raw(account.account_creation_date.to_string()),
-                ]));
-            }
+        if !account.username.is_empty() {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Username", width = 15)),
+                account.username.clone().into(),
+            ]));
         }
 
-        Paragraph::new(detail_items)
-            .block(details_block)
-            .render(area, buf);
+        if let Some(email) = &account.email {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Email", width = 15)),
+                email.into(),
+            ]));
+        }
+
+        if let Some(_password) = &account.password {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Password", width = 15)),
+                format!("{{{}}}", "*").into(),
+            ]));
+        }
+
+        if let Some(access_token) = &account.access_token
+            && !access_token.is_empty()
+        {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
+                access_token.into(),
+            ]));
+        }
+
+        if let Some(pin) = &account.pin {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "PIN", width = 15)),
+                pin.into(),
+            ]));
+        }
+
+        if let Some(passcode) = &account.passcode {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
+                passcode.into(),
+            ]));
+        }
+
+        if !account.last_change.is_empty() {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
+                Span::raw(account.last_change.to_string()),
+            ]));
+        }
+
+        if !account.account_creation_date.is_empty() {
+            lines.push(Line::from(vec![
+                Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
+                Span::raw(account.account_creation_date.to_string()),
+            ]));
+        }
+
+        List::new(lines)
+    }
+
+    fn construct_empty_accounts_alert(&self) -> List<'_> {
+        let lines = vec![
+            Line::from("No accounts found for this service"),
+            Line::from("Press 'n' to add a new one"),
+        ];
+
+        List::new(lines)
+    }
+
+    fn construct_service_list(&self) -> List<'static> {
+        let list_items: Vec<ListItem> = self
+            .services
+            .list
+            .iter()
+            .map(|service| ListItem::new(Line::from(service.name.clone())))
+            .collect();
+
+        List::new(list_items)
+            .highlight_symbol(" > ")
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
+            .highlight_spacing(HighlightSpacing::Always)
+    }
+
+    fn construct_empty_services_alert(&self) -> List<'_> {
+        let lines = vec![
+            Line::from("No services found in the database"),
+            Line::from("Press 'n' to add a new one"),
+        ];
+
+        List::new(lines)
     }
 }

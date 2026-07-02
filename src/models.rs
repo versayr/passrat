@@ -1,6 +1,6 @@
-use chrono::{Datelike, Local};
-use ordinal::ToOrdinal;
 use serde::{Deserialize, Serialize};
+
+use crate::helpers::format_current_date;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
@@ -53,20 +53,11 @@ impl Default for Service {
 
 impl Default for Account {
     fn default() -> Self {
-        let now = Local::now();
-        let last_change = format!(
-            "{}, {} {}, {}",
-            now.format("%A"),
-            now.format("%B"),
-            now.day().to_ordinal_string(),
-            now.format("%Y")
-        );
-
         Self {
             id: None,
             service_id: 1,
             username: "Bruce".into(),
-            last_change: last_change,
+            last_change: format_current_date(),
             account_creation_date: "".into(),
             email: None,
             password: None,
