@@ -64,7 +64,16 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        self.render_service_list(Block::inner(&block, area), buf);
+        match self.services.list.is_empty() {
+            true => {
+                Widget::render(self.construct_empty_services_alert(), Block::inner(&block, area), buf);
+            },
+            false => {
+                let list = self.construct_service_list();
+                StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
+            }
+        }
+
         block.render(area, buf);
     }
 
@@ -116,18 +125,6 @@ impl App {
             .border_type(BorderType::Rounded);
 
         block.render(area, buf);
-    }
-
-    fn render_service_list(&mut self, area: Rect, buf: &mut Buffer) {
-        match self.services.list.is_empty() {
-            true => {
-                Widget::render(self.construct_empty_services_alert(), area, buf);
-            },
-            false => {
-                let list = self.construct_service_list();
-                StatefulWidget::render(list, area, buf, &mut self.services.state);
-            }
-        }
     }
 
     fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {

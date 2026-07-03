@@ -6,7 +6,8 @@ use ratatui::{
     widgets::{ListState, Widget},
 };
 use rusqlite::{Connection, Error, params};
-use std::{io, path::Path};
+use std::io;
+use xdg::BaseDirectories;
 
 use crate::{
     db::{connect_database, init_database},
@@ -105,7 +106,7 @@ impl App {
     fn handle_locked_inputs(&mut self, event: KeyEvent) {
         match event.code {
             KeyCode::Esc => self.exit = true,
-            KeyCode::Enter => self.submit_password(),
+            KeyCode::Enter => self.submit_password().expect("Failed to submit password."),
             KeyCode::Backspace => {
                 self.password.pop();
             }
@@ -177,37 +178,37 @@ impl App {
         }
     }
 
-    fn submit_password(&mut self) {
-        // TODO
-        // add a check that to see if the db exists
-        // if yes, then:
-        //   get a connection using the password, or
-        //   prompt user again for the correct password
-        // if no, then:
-        //   init the db and set the password
-        let path = Path::new("vault.db");
+    fn submit_password(&mut self) -> Result<(), Error> {
+        let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
+        path.create_data_directory("")
+            .expect("Failed to create data directory.");
 
-        if path.exists() {
-            if let Ok(conn) = connect_database(path, &self.password) {
-                self.conn = Some(conn);
-                self.password = "".into();
-                self.alert = "".into();
-                self.locked = false;
-                self.get_services()
-                    .expect("Failed to get list of services.");
-                // TODO
-                // handle empty services list?
-                self.services.state.select(Some(0));
-            } else {
-                self.password = "".into();
-                self.alert = "Incorrect password - please try again.".into();
+        match path.find_data_file("vault.db") {
+            Some(path) => {
+                match connect_database(&path, &self.password) {
+                    Ok(conn) => {
+                        self.conn = Some(conn);
+                        self.password = "".into();
+                        self.alert = "".into();
+                        self.locked = false;
+                        self.get_services()
+                            .expect("Failed to get list of services.");
+                        self.services.state.select(Some(0));
+                    },
+                    Err(_) => {
+                        self.password = "".into();
+                        self.alert = "Incorrect password - please try again.".into();
+                    }
+                }
             }
-        } else if let Ok(conn) = init_database(path, &self.password) {
-            self.conn = Some(conn);
-            self.password = "".into();
-            self.alert = "".into();
-            self.locked = false;
+            None => {
+                let _ = init_database(&self.password);
+                self.password = "".into();
+                self.alert = "Database created - please enter passphrase again.".into();
+            }
         }
+
+        Ok(())
     }
 
     pub fn get_services(&mut self) -> Result<(), Error> {
@@ -215,8 +216,7 @@ impl App {
             .conn
             .as_mut()
             .expect("Failed to connect to database.")
-            .prepare("SELECT id, name, url FROM services ORDER BY name")
-            .expect("Failed to prepare statement.");
+            .prepare("SELECT id, name, url FROM services ORDER BY name")?;
 
         let result = stmt.query_map([], |row| {
             Ok(Service {

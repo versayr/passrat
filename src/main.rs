@@ -24,7 +24,10 @@ fn main() -> color_eyre::Result<()> {
     // Ok(app_result?)
 
     match app_result {
-        Ok(result) => Ok(result),
+        Ok(result) => {
+            eprintln!("App State: {app:#?}");
+            Ok(result)
+        }
         Err(err) => {
             eprintln!("App State: {app:#?}");
             std::panic::resume_unwind(err)

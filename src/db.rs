@@ -1,23 +1,24 @@
 use rusqlite::{Connection, Error, Row};
 use std::path::Path;
+use xdg::BaseDirectories;
 
 use crate::models::Account;
 
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
     let conn = Connection::open(path).expect("Vault not found.");
     conn.pragma_update(None, "key", password)?;
-    // conn.execute("SELECT COUNT(*) FROM sqlite_master", [])?;
-    Ok(conn)
+    match conn.query_row("SELECT COUNT(*) FROM services", [], |r| r.get::<_, i64>(0)) {
+        Ok(_) => Ok(conn),
+        Err(e) => Err(e),
+    }
 }
 
-pub fn init_database(path: &Path, password: &str) -> Result<Connection, Error> {
-    let conn = Connection::open(path).expect("Vault not found.");
+pub fn init_database(password: &str) -> Result<(), Error> {
+    let path = BaseDirectories::with_prefix("passrat")
+        .get_data_file("vault.db")
+        .expect("Failed to get db.");
+    let conn = Connection::open(path)?;
     conn.pragma_update(None, "key", password)?;
-
-    // for some reason, this line will cause the db to not be created if it doesn't exist
-    // however, without it, entering the wrong password causes a crash if the db does exist
-    // also, entering the wrong password causes the correct one to fail??
-    // conn.execute("SELECT COUNT(*) FROM sqlite_master", [])?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS services (
@@ -68,7 +69,7 @@ pub fn init_database(path: &Path, password: &str) -> Result<Connection, Error> {
     )
     .expect("Failed to create security question table.");
 
-    Ok(conn)
+    Ok(())
 }
 
 impl Account {
