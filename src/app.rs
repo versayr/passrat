@@ -125,16 +125,18 @@ impl App {
             KeyCode::Char('n') => self.add_service().expect("Failed to add service."),
             KeyCode::Char('\\') => self.mode = Mode::Shortcuts,
             KeyCode::Enter => {
-                self.selected_service = Some(
-                    self.services.list[self
+                if !self.services.list.is_empty() {
+                    self.selected_service = Some(
+                        self.services.list[self
                         .services
                         .state
                         .selected()
                         .expect("No service is selected.")]
-                    .clone(),
-                );
-                let _ = self.get_accounts();
-                self.mode = Mode::View;
+                        .clone(),
+                    );
+                    let _ = self.get_accounts();
+                    self.mode = Mode::View;
+                }
             }
             _ => {}
         }
