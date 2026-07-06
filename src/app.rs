@@ -45,7 +45,7 @@ enum Mode {
     View,
     Edit,
     Help,
-    Shortcuts,
+    Cuts,
 }
 
 impl App {
@@ -98,7 +98,7 @@ impl App {
                 Mode::View => self.handle_view_inputs(event),
                 Mode::Edit => self.handle_edit_inputs(event),
                 Mode::Help => self.handle_help_inputs(event),
-                Mode::Shortcuts => self.handle_shortcut_inputs(event),
+                Mode::Cuts => self.handle_shortcut_inputs(event),
             }
         }
     }
@@ -123,7 +123,7 @@ impl App {
             KeyCode::Char('k') | KeyCode::Up => self.services.state.select_previous(),
             KeyCode::Char('e') => self.mode = Mode::Edit,
             KeyCode::Char('n') => self.add_service().expect("Failed to add service."),
-            KeyCode::Char('\\') => self.mode = Mode::Shortcuts,
+            KeyCode::Char('\\') => self.mode = Mode::Cuts,
             KeyCode::Enter => {
                 if !self.services.list.is_empty() {
                     self.selected_service = Some(
@@ -350,7 +350,7 @@ impl Widget for &mut App {
                 Mode::View => self.render_view_mode(area, buf),
                 Mode::Edit => self.render_edit_mode(area, buf),
                 Mode::Help => self.render_help_mode(area, buf),
-                Mode::Shortcuts => self.render_shortcut_mode(area, buf),
+                Mode::Cuts => self.render_shortcut_mode(area, buf),
             }
         }
     }
