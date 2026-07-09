@@ -12,6 +12,7 @@ use ratatui::{
 };
 
 use crate::App;
+use crate::models::Service;
 
 impl App {
     pub fn render_lock_mode(&mut self, area: Rect, buf: &mut Buffer) {
@@ -86,7 +87,7 @@ impl App {
         block.render(area, buf);
     }
 
-    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer) {
+    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer, service: Service) {
         let title = Line::from(" View Mode ");
         let block = Block::bordered()
             .title(title)
@@ -102,7 +103,7 @@ impl App {
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(main_layout[1]);
 
-        self.render_service_details(main_layout[0], buf);
+        self.render_service_details(main_layout[0], buf, service);
         self.render_account_list(body_layout[0], buf);
         self.render_account_details(body_layout[1], buf);
 
@@ -127,16 +128,11 @@ impl App {
         block.render(area, buf);
     }
 
-    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
+    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer, service: Service) {
         let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ SERVICE DETAILS ] ]");
-
-        let service = self
-            .selected_service
-            .as_ref()
-            .expect("No service is selected.");
 
         let mut service_details = vec![Line::from(format!(" {} ", service.name.clone()))];
 

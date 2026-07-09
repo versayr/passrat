@@ -19,10 +19,10 @@ impl App {
         match self.mode {
             Mode::Lock => self.handle_lock_inputs(event),
             Mode::List => self.handle_list_inputs(event),
-            Mode::View => self.handle_view_inputs(event),
             Mode::Edit => self.handle_edit_inputs(event),
             Mode::Help => self.handle_help_inputs(event),
             Mode::Cuts => self.handle_shortcut_inputs(event),
+            Mode::View(_) => self.handle_view_inputs(event),
         }
     }
 
@@ -49,16 +49,14 @@ impl App {
             KeyCode::Char('\\') => self.mode = Mode::Cuts,
             KeyCode::Enter => {
                 if !self.services.list.is_empty() {
-                    self.selected_service = Some(
-                        self.services.list[self
+                    let service = self.services.list[self
                         .services
                         .state
                         .selected()
                         .expect("No service is selected.")]
-                        .clone(),
-                    );
+                    .clone();
                     let _ = self.get_accounts();
-                    self.mode = Mode::View;
+                    self.mode = Mode::View(service);
                 }
             }
             _ => {}
@@ -102,5 +100,4 @@ impl App {
             _ => {}
         }
     }
-
 }
