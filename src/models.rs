@@ -15,7 +15,7 @@ pub struct Account {
     pub service_id: u16,
     pub username: String,
     pub last_change: String,
-    pub account_creation_date: String,
+    pub creation_date: String,
     pub email: Option<String>,
     pub password: Option<String>,
     pub access_token: Option<String>,
@@ -41,6 +41,15 @@ pub struct Shortcut {
     pub sequence: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub enum Target {
+    Service, 
+    Account, 
+    SecurityQuestion,
+    Shortcut,
+}
+
 impl Default for Service {
     fn default() -> Self {
         Self {
@@ -58,7 +67,7 @@ impl Default for Account {
             service_id: 1,
             username: "Bruce".into(),
             last_change: format_current_date(),
-            account_creation_date: "".into(),
+            creation_date: String::new(),
             email: None,
             password: None,
             access_token: None,

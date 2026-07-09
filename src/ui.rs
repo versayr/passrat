@@ -65,14 +65,11 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        match self.services.list.is_empty() {
-            true => {
-                Widget::render(self.construct_empty_services_alert(), Block::inner(&block, area), buf);
-            },
-            false => {
-                let list = self.construct_service_list();
-                StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
-            }
+        if self.services.list.is_empty() {
+            Widget::render(self.construct_empty_services_alert(), Block::inner(&block, area), buf);
+        } else {
+            let list = self.construct_service_list();
+            StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
         }
 
         block.render(area, buf);
@@ -87,7 +84,7 @@ impl App {
         block.render(area, buf);
     }
 
-    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer, service: Service) {
+    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer, service: &Service) {
         let title = Line::from(" View Mode ");
         let block = Block::bordered()
             .title(title)
@@ -128,7 +125,7 @@ impl App {
         block.render(area, buf);
     }
 
-    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer, service: Service) {
+    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer, service: &Service) {
         let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
@@ -178,22 +175,19 @@ impl App {
             .title("[ [ ACCOUNT DETAILS ] ]")
             .padding(Padding::left(1));
 
-        match self.accounts.list.is_empty() {
-            true => {
-                Widget::render(
-                    self.construct_empty_accounts_alert().block(details_block),
-                    area,
-                    buf,
-                );
-            }
-            false => {
-                Widget::render(
-                    self.construct_account_details().block(details_block),
-                    area,
-                    buf,
-                );
-            }
-        };
+        if self.accounts.list.is_empty() {
+            Widget::render(
+                self.construct_empty_accounts_alert().block(details_block),
+                area,
+                buf,
+            );
+        } else {
+            Widget::render(
+                self.construct_account_details().block(details_block),
+                area,
+                buf,
+            );
+        }
     }
 
     fn construct_account_details(&self) -> List<'_> {
@@ -252,14 +246,14 @@ impl App {
         if !account.last_change.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
-                Span::raw(account.last_change.to_string()),
+                Span::raw(account.last_change.clone()),
             ]));
         }
 
-        if !account.account_creation_date.is_empty() {
+        if !account.creation_date.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
-                Span::raw(account.account_creation_date.to_string()),
+                Span::raw(account.creation_date.clone()),
             ]));
         }
 

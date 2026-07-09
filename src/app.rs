@@ -10,7 +10,7 @@ use xdg::BaseDirectories;
 
 use crate::{
     db::{connect_database, init_database},
-    models::{Account, Service},
+    models::{Account, Service, Target},
 };
 
 #[derive(Debug)]
@@ -40,9 +40,9 @@ pub struct AccountList {
 pub enum Mode {
     Lock,
     List,
-    Edit,
     Help,
     Cuts,
+    Edit(Target),
     View(Service),
 }
 
@@ -50,8 +50,8 @@ impl App {
     pub fn new() -> Self {
         Self {
             exit: false,
-            password: "".into(),
-            alert: "".into(),
+            password: String::new(),
+            alert: String::new(),
             mode: Mode::Lock,
             conn: None,
             services: ServiceList::default(),
@@ -64,7 +64,7 @@ impl App {
 
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+            self.handle_events();
         }
 
         Ok(())
@@ -74,35 +74,29 @@ impl App {
         frame.render_widget(self, frame.area());
     }
 
-    pub fn submit_password(&mut self) -> Result<(), Error> {
+    pub fn submit_password(&mut self) {
         let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
         path.create_data_directory("")
             .expect("Failed to create data directory.");
 
-        match path.find_data_file("vault.db") {
-            Some(path) => match connect_database(&path, &self.password) {
-                Ok(conn) => {
-                    self.conn = Some(conn);
-                    self.password = "".into();
-                    self.alert = "".into();
-                    self.get_services()
-                        .expect("Failed to get list of services.");
-                    self.mode = Mode::List;
-                    self.services.state.select(Some(0));
-                }
-                Err(_) => {
-                    self.password = "".into();
-                    self.alert = "Incorrect password - please try again.".into();
-                }
-            },
-            None => {
-                let _ = init_database(&self.password);
-                self.password = "".into();
-                self.alert = "Database created - please enter passphrase again.".into();
+        if let Some(path) = path.find_data_file("vault.db") {
+            if let Ok(conn) = connect_database(&path, &self.password) {
+                self.conn = Some(conn);
+                self.password = String::new();
+                self.alert = String::new();
+                self.get_services()
+                    .expect("Failed to get list of services.");
+                self.mode = Mode::List;
+                self.services.state.select(Some(0));
+            } else {
+                self.password = String::new();
+                self.alert = "Incorrect password - please try again.".into();
             }
+        } else {
+            let _ = init_database(&self.password);
+            self.password = String::new();
+            self.alert = "Database created - please enter passphrase again.".into();
         }
-
-        Ok(())
     }
 
     pub fn get_services(&mut self) -> Result<(), Error> {
@@ -122,7 +116,7 @@ impl App {
 
         self.services.list.clear();
 
-        for service in result.into_iter() {
+        for service in result {
             self.services.list.push(service?);
         }
 
@@ -143,17 +137,16 @@ impl App {
             .as_mut()
             .expect("Failed to connect to database.")
             .prepare(&format!(
-                "SELECT * FROM accounts WHERE service_id = {} ORDER BY username",
-                service_id
+                "SELECT * FROM accounts WHERE service_id = {service_id} ORDER BY username"
             ))
             .expect("Failed to prepare statement.");
 
-        let result = stmt.query_map([], Account::from_row)?;
+        let mut rows = stmt.query([])?;
 
         self.accounts.list.clear();
 
-        for account in result.into_iter() {
-            self.accounts.list.push(account?);
+        while let Some(row) = rows.next()? {
+            self.accounts.list.push(Account::from_row(row));
         }
 
         self.accounts.state.select(Some(0));
@@ -161,7 +154,7 @@ impl App {
         Ok(())
     }
 
-    pub fn add_service(&mut self) -> Result<(), Error> {
+    pub fn add_service(&mut self) {
         let service = Service::default();
         let conn = self.conn.as_mut().expect("Failed to get connection.");
 
@@ -172,7 +165,6 @@ impl App {
 
         self.get_services()
             .expect("Failed to refresh service list.");
-        Ok(())
     }
 
     //     fn update_service(&mut self) -> Result<(), Error> {
@@ -183,7 +175,7 @@ impl App {
     //
     //     }
 
-    pub fn add_account(&mut self) -> Result<(), Error> {
+    pub fn add_account(&mut self) {
         let account = Account::default();
         let conn = self.conn.as_mut().expect("Failed to get connection.");
 
@@ -207,7 +199,7 @@ impl App {
                 .id,
                 account.username,
                 account.last_change,
-                account.account_creation_date,
+                account.creation_date,
                 account.email,
                 account.password,
                 account.access_token,
@@ -218,7 +210,6 @@ impl App {
 
         self.get_accounts()
             .expect("Failed to refresh accounts list.");
-        Ok(())
     }
 
     //     fn update_account(&mut self) -> Result<(), Error> {
@@ -238,10 +229,10 @@ impl Widget for &mut App {
         match &self.mode {
             Mode::Lock => self.render_lock_mode(area, buf),
             Mode::List => self.render_list_mode(area, buf),
-            Mode::Edit => self.render_edit_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
-            Mode::View(service) => self.render_view_mode(area, buf, service.clone()),
+            Mode::Edit(_) => self.render_edit_mode(area, buf),
+            Mode::View(service) => self.render_view_mode(area, buf, &service.clone()),
         }
     }
 }
