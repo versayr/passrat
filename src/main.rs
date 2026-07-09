@@ -7,6 +7,7 @@ mod db;
 mod helpers;
 mod models;
 mod ui;
+mod inputs;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
