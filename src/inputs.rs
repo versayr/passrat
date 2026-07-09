@@ -28,9 +28,9 @@ impl App {
             KeyCode::Esc => self.exit = true,
             KeyCode::Enter => self.submit_password(),
             KeyCode::Backspace => {
-                self.password.pop();
+                self.input.pop();
             }
-            KeyCode::Char(char) => self.password.push(char),
+            KeyCode::Char(char) => self.input.push(char),
             _ => {}
         }
     }

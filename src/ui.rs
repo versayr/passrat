@@ -32,7 +32,7 @@ impl App {
 
         let input = Paragraph::new(vec![
             Line::from(vec![
-                Span::from("*".repeat(self.password.len())),
+                Span::from("*".repeat(self.input.len())),
                 Span::styled(" ", Style::reversed(Style::default())),
             ]),
             Line::from(self.alert.clone()),
@@ -268,6 +268,7 @@ impl App {
             .services
             .list
             .iter()
+            .filter(|service| service.name.contains(&self.input))
             .map(|service| ListItem::new(Line::from(service.name.clone())))
             .collect();
 

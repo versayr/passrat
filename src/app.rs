@@ -17,7 +17,7 @@ use crate::{
 pub struct App {
     pub exit: bool,
     pub mode: Mode,
-    pub password: String,
+    pub input: String,
     pub alert: String,
     pub conn: Option<Connection>,
     pub services: ServiceList,
@@ -50,7 +50,7 @@ impl App {
     pub fn new() -> Self {
         Self {
             exit: false,
-            password: String::new(),
+            input: String::new(),
             alert: String::new(),
             mode: Mode::Lock,
             conn: None,
@@ -80,21 +80,21 @@ impl App {
             .expect("Failed to create data directory.");
 
         if let Some(path) = path.find_data_file("vault.db") {
-            if let Ok(conn) = connect_database(&path, &self.password) {
+            if let Ok(conn) = connect_database(&path, &self.input) {
                 self.conn = Some(conn);
-                self.password = String::new();
+                self.input = String::new();
                 self.alert = String::new();
                 self.get_services()
                     .expect("Failed to get list of services.");
                 self.mode = Mode::List;
                 self.services.state.select(Some(0));
             } else {
-                self.password = String::new();
-                self.alert = "Incorrect password - please try again.".into();
+                self.input = String::new();
+                self.alert = "Incorrect input - please try again.".into();
             }
         } else {
-            let _ = init_database(&self.password);
-            self.password = String::new();
+            let _ = init_database(&self.input);
+            self.input = String::new();
             self.alert = "Database created - please enter passphrase again.".into();
         }
     }
@@ -184,7 +184,7 @@ impl App {
                 service_id,
                 username,
                 last_change,
-                account_creation_date,
+                creation_date,
                 email,
                 password,
                 access_token,
