@@ -22,23 +22,8 @@ impl App {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let layout = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints(vec![
-                Constraint::Fill(1),
-                Constraint::Length(6),
-                Constraint::Fill(4),
-            ])
-            .split(Block::inner(&block, area));
-
-        let layout_inner = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(vec![
-                Constraint::Fill(1),
-                Constraint::Length(60),
-                Constraint::Fill(1),
-            ])
-            .split(layout[1]);
+        let input_area =
+            Block::inner(&block, area).centered(Constraint::Length(60), Constraint::Length(6));
 
         let input_block = Block::bordered()
             .title(Line::from("[ [ ENTER PASSPHRASE ] ]"))
@@ -54,7 +39,7 @@ impl App {
         ])
         .block(input_block);
 
-        input.render(layout_inner[1], buf);
+        input.render(input_area, buf);
         block.render(area, buf);
     }
 
@@ -66,10 +51,19 @@ impl App {
             .border_type(BorderType::Rounded);
 
         if self.services.list.is_empty() {
-            Widget::render(self.construct_empty_services_alert(), Block::inner(&block, area), buf);
+            Widget::render(
+                self.construct_empty_services_alert(),
+                Block::inner(&block, area),
+                buf,
+            );
         } else {
             let list = self.construct_service_list();
-            StatefulWidget::render(list, Block::inner(&block, area), buf, &mut self.services.state);
+            StatefulWidget::render(
+                list,
+                Block::inner(&block, area),
+                buf,
+                &mut self.services.state,
+            );
         }
 
         block.render(area, buf);

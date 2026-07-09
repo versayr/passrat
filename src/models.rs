@@ -44,8 +44,8 @@ pub struct Shortcut {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum Target {
-    Service, 
-    Account, 
+    Service,
+    Account,
     SecurityQuestion,
     Shortcut,
 }

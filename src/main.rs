@@ -4,11 +4,11 @@ use crate::app::App;
 
 mod app;
 mod db;
-mod ui;
-mod helpers;
-mod models;
-mod inputs;
 mod forms;
+mod helpers;
+mod inputs;
+mod models;
+mod ui;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;

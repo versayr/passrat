@@ -79,7 +79,7 @@ impl App {
             KeyCode::Char('e') => {
                 // self.mode = Mode::Edit
                 todo!("Set edit target: Account or Service.")
-            },
+            }
             KeyCode::Char('n') => self.add_account(),
             _ => {}
         }

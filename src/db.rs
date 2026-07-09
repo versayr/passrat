@@ -7,7 +7,9 @@ use crate::models::Account;
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
     let conn = Connection::open(path).expect("Vault not found.");
     conn.pragma_update(None, "key", password)?;
-    match conn.query_row("SELECT COUNT(*) FROM services", [], |r| r.get::<usize, i64>(0)) {
+    match conn.query_row("SELECT COUNT(*) FROM services", [], |r| {
+        r.get::<usize, i64>(0)
+    }) {
         Ok(_) => Ok(conn),
         Err(e) => Err(e),
     }

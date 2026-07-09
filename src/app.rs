@@ -1,10 +1,10 @@
 use ratatui::{
+    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
     widgets::{ListState, Widget},
-    DefaultTerminal, Frame,
 };
-use rusqlite::{params, Connection, Error};
+use rusqlite::{Connection, Error, params};
 use std::io;
 use xdg::BaseDirectories;
 
