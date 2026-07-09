@@ -16,20 +16,17 @@ impl App {
     }
 
     fn handle_key_events(&mut self, event: KeyEvent) {
-        if self.locked {
-            self.handle_locked_inputs(event);
-        } else {
-            match self.mode {
-                Mode::List => self.handle_list_inputs(event),
-                Mode::View => self.handle_view_inputs(event),
-                Mode::Edit => self.handle_edit_inputs(event),
-                Mode::Help => self.handle_help_inputs(event),
-                Mode::Cuts => self.handle_shortcut_inputs(event),
-            }
+        match self.mode {
+            Mode::Lock => self.handle_lock_inputs(event),
+            Mode::List => self.handle_list_inputs(event),
+            Mode::View => self.handle_view_inputs(event),
+            Mode::Edit => self.handle_edit_inputs(event),
+            Mode::Help => self.handle_help_inputs(event),
+            Mode::Cuts => self.handle_shortcut_inputs(event),
         }
     }
 
-    fn handle_locked_inputs(&mut self, event: KeyEvent) {
+    fn handle_lock_inputs(&mut self, event: KeyEvent) {
         match event.code {
             KeyCode::Esc => self.exit = true,
             KeyCode::Enter => self.submit_password().expect("Failed to submit password."),

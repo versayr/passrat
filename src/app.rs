@@ -16,7 +16,6 @@ use crate::{
 #[derive(Debug)]
 pub struct App {
     pub exit: bool,
-    pub locked: bool,
     pub mode: Mode,
     pub password: String,
     pub alert: String,
@@ -40,6 +39,7 @@ pub struct AccountList {
 
 #[derive(Debug)]
 pub enum Mode {
+    Lock,
     List,
     View,
     Edit,
@@ -51,10 +51,9 @@ impl App {
     pub fn new() -> Self {
         Self {
             exit: false,
-            locked: true,
             password: "".into(),
             alert: "".into(),
-            mode: Mode::List,
+            mode: Mode::Lock,
             conn: None,
             services: ServiceList::default(),
             accounts: AccountList::default(),
@@ -89,9 +88,9 @@ impl App {
                         self.conn = Some(conn);
                         self.password = "".into();
                         self.alert = "".into();
-                        self.locked = false;
                         self.get_services()
                             .expect("Failed to get list of services.");
+                        self.mode = Mode::List;
                         self.services.state.select(Some(0));
                     },
                     Err(_) => {
@@ -140,16 +139,16 @@ impl App {
             .state
             .selected()
             .expect("No service selected.")]
-        .id
-        .expect("Failed to get service id.");
+            .id
+            .expect("Failed to get service id.");
 
         let mut stmt = self
             .conn
             .as_mut()
             .expect("Failed to connect to database.")
             .prepare(&format!(
-                "SELECT * FROM accounts WHERE service_id = {} ORDER BY username",
-                service_id
+                    "SELECT * FROM accounts WHERE service_id = {} ORDER BY username",
+                    service_id
             ))
             .expect("Failed to prepare statement.");
 
@@ -194,21 +193,21 @@ impl App {
 
         let _ = conn.execute(
             "INSERT INTO accounts (
-            service_id,
-            username,
-            last_change,
-            account_creation_date,
-            email,
-            password,
-            access_token,
-            pin,
-            passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![
+                service_id,
+                username,
+                last_change,
+                account_creation_date,
+                email,
+                password,
+                access_token,
+                pin,
+                passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                params![
                 &self
-                    .selected_service
-                    .as_ref()
-                    .expect("No selected service.")
-                    .id,
+                .selected_service
+                .as_ref()
+                .expect("No selected service.")
+                .id,
                 account.username,
                 account.last_change,
                 account.account_creation_date,
@@ -217,11 +216,11 @@ impl App {
                 account.access_token,
                 account.pin,
                 account.passcode
-            ],
-        );
+                ],
+                );
 
-        self.get_accounts()
-            .expect("Failed to refresh accounts list.");
+                self.get_accounts()
+                    .expect("Failed to refresh accounts list.");
         Ok(())
     }
 
@@ -239,16 +238,13 @@ impl Widget for &mut App {
     where
         Self: Sized,
     {
-        if self.locked {
-            self.render_locked_mode(area, buf);
-        } else {
-            match self.mode {
-                Mode::List => self.render_list_mode(area, buf),
-                Mode::View => self.render_view_mode(area, buf),
-                Mode::Edit => self.render_edit_mode(area, buf),
-                Mode::Help => self.render_help_mode(area, buf),
-                Mode::Cuts => self.render_shortcut_mode(area, buf),
-            }
+        match self.mode {
+            Mode::Lock => self.render_lock_mode(area, buf),
+            Mode::List => self.render_list_mode(area, buf),
+            Mode::View => self.render_view_mode(area, buf),
+            Mode::Edit => self.render_edit_mode(area, buf),
+            Mode::Help => self.render_help_mode(area, buf),
+            Mode::Cuts => self.render_shortcut_mode(area, buf),
         }
     }
 }

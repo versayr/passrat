@@ -14,7 +14,7 @@ use ratatui::{
 use crate::App;
 
 impl App {
-    pub fn render_locked_mode(&mut self, area: Rect, buf: &mut Buffer) {
+    pub fn render_lock_mode(&mut self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Login Screen ");
         let block = Block::bordered()
             .title(title)
