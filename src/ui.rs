@@ -11,11 +11,19 @@ use ratatui::{
     },
 };
 
-use crate::App;
+use crate::{App, app::Mode::Lock};
 use crate::models::Service;
 
 impl App {
     pub fn render_lock_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let mut password = String::new();
+        let mut alert = String::new();
+
+        if let Lock(state) = &mut self.mode {
+            password.clone_from(&state.password);
+            alert.clone_from(&state.alert);
+        }
+
         let title = Line::from(" Login Screen ");
         let block = Block::bordered()
             .title(title)
@@ -32,10 +40,10 @@ impl App {
 
         let input = Paragraph::new(vec![
             Line::from(vec![
-                Span::from("*".repeat(self.input.len())),
+                Span::from("*".repeat(password.len())),
                 Span::styled(" ", Style::reversed(Style::default())),
             ]),
-            Line::from(self.alert.clone()),
+            Line::from(alert),
         ])
         .block(input_block);
 
@@ -268,7 +276,7 @@ impl App {
             .services
             .list
             .iter()
-            .filter(|service| service.name.contains(&self.input))
+            // .filter(|service| service.name.contains(&self.input))
             .map(|service| ListItem::new(Line::from(service.name.clone())))
             .collect();
 

@@ -1,6 +1,6 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 
-use crate::app::{App, Mode};
+use crate::app::{App, Mode::{self, Lock}};
 
 impl App {
     pub fn handle_events(&mut self) {
@@ -14,7 +14,7 @@ impl App {
 
     fn handle_key_events(&mut self, event: KeyEvent) {
         match self.mode {
-            Mode::Lock => self.handle_lock_inputs(event),
+            Mode::Lock(_) => self.handle_lock_inputs(event),
             Mode::List => self.handle_list_inputs(event),
             Mode::Help => self.handle_help_inputs(event),
             Mode::Cuts => self.handle_shortcut_inputs(event),
@@ -24,14 +24,22 @@ impl App {
     }
 
     fn handle_lock_inputs(&mut self, event: KeyEvent) {
-        match event.code {
-            KeyCode::Esc => self.exit = true,
-            KeyCode::Enter => self.submit_password(),
-            KeyCode::Backspace => {
-                self.input.pop();
+        let mut password: Option<String> = None;
+
+        if let Lock(state) = &mut self.mode {
+            match event.code {
+                KeyCode::Esc => self.exit = true,
+                KeyCode::Enter => password = Some(state.password.clone()),
+                KeyCode::Backspace => {
+                    state.password.pop();
+                }
+                KeyCode::Char(char) => state.password.push(char),
+                _ => {}
             }
-            KeyCode::Char(char) => self.input.push(char),
-            _ => {}
+        }
+
+        if let Some(s) = password {
+            self.submit_password(&s);
         }
     }
 

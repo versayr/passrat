@@ -1,10 +1,10 @@
 use ratatui::{
-    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
     widgets::{ListState, Widget},
+    DefaultTerminal, Frame,
 };
-use rusqlite::{Connection, Error, params};
+use rusqlite::{params, Connection, Error};
 use std::io;
 use xdg::BaseDirectories;
 
@@ -17,11 +17,25 @@ use crate::{
 pub struct App {
     pub exit: bool,
     pub mode: Mode,
-    pub input: String,
-    pub alert: String,
     pub conn: Option<Connection>,
     pub services: ServiceList,
     pub accounts: AccountList,
+}
+
+#[derive(Debug)]
+pub enum Mode {
+    Lock(LockState),
+    List,
+    Help,
+    Cuts,
+    Edit(Target),
+    View(Service),
+}
+
+#[derive(Debug, Default)]
+pub struct LockState {
+    pub password: String,
+    pub alert: String,
 }
 
 #[derive(Debug, Default)]
@@ -36,23 +50,11 @@ pub struct AccountList {
     pub state: ListState,
 }
 
-#[derive(Debug)]
-pub enum Mode {
-    Lock,
-    List,
-    Help,
-    Cuts,
-    Edit(Target),
-    View(Service),
-}
-
 impl App {
     pub fn new() -> Self {
         Self {
             exit: false,
-            input: String::new(),
-            alert: String::new(),
-            mode: Mode::Lock,
+            mode: Mode::Lock(LockState::default()),
             conn: None,
             services: ServiceList::default(),
             accounts: AccountList::default(),
@@ -74,28 +76,30 @@ impl App {
         frame.render_widget(self, frame.area());
     }
 
-    pub fn submit_password(&mut self) {
+    pub fn submit_password(&mut self, password: &str) {
         let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
         path.create_data_directory("")
             .expect("Failed to create data directory.");
 
         if let Some(path) = path.find_data_file("vault.db") {
-            if let Ok(conn) = connect_database(&path, &self.input) {
+            if let Ok(conn) = connect_database(&path, password) {
                 self.conn = Some(conn);
-                self.input = String::new();
-                self.alert = String::new();
                 self.get_services()
                     .expect("Failed to get list of services.");
                 self.mode = Mode::List;
                 self.services.state.select(Some(0));
             } else {
-                self.input = String::new();
-                self.alert = "Incorrect input - please try again.".into();
+                self.mode = Mode::Lock(LockState {
+                    password: String::new(),
+                    alert: "Incorrect input - please try again.".into(),
+                });
             }
         } else {
-            let _ = init_database(&self.input);
-            self.input = String::new();
-            self.alert = "Database created - please enter passphrase again.".into();
+            let _ = init_database(password);
+            self.mode = Mode::Lock(LockState {
+                password: String::new(),
+                alert: "Database created - please enter passphrase again.".into(),
+            });
         }
     }
 
@@ -227,7 +231,7 @@ impl Widget for &mut App {
         Self: Sized,
     {
         match &self.mode {
-            Mode::Lock => self.render_lock_mode(area, buf),
+            Mode::Lock(_) => self.render_lock_mode(area, buf),
             Mode::List => self.render_list_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
