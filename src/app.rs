@@ -25,7 +25,7 @@ pub struct App {
 #[derive(Debug)]
 pub enum Mode {
     Lock(LockState),
-    List,
+    Home(HomeState),
     Help,
     Cuts,
     Edit(Target),
@@ -36,6 +36,11 @@ pub enum Mode {
 pub struct LockState {
     pub password: String,
     pub alert: String,
+}
+
+#[derive(Debug, Default)]
+pub struct HomeState {
+    pub filter: String,
 }
 
 #[derive(Debug, Default)]
@@ -86,7 +91,7 @@ impl App {
                 self.conn = Some(conn);
                 self.get_services()
                     .expect("Failed to get list of services.");
-                self.mode = Mode::List;
+                self.mode = Mode::Home(HomeState::default());
                 self.services.state.select(Some(0));
             } else {
                 self.mode = Mode::Lock(LockState {
@@ -232,7 +237,7 @@ impl Widget for &mut App {
     {
         match &self.mode {
             Mode::Lock(_) => self.render_lock_mode(area, buf),
-            Mode::List => self.render_list_mode(area, buf),
+            Mode::Home(_) => self.render_list_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
             Mode::Edit(_) => self.render_edit_mode(area, buf),
