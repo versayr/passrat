@@ -3,7 +3,7 @@ use ratatui::widgets::ListState;
 
 use crate::app::{
     AccountList, App, HomeState,
-    Mode::{self, Lock},
+    Mode::{self, Lock, View},
     ViewState,
 };
 
@@ -18,7 +18,7 @@ impl App {
     }
 
     fn handle_key_events(&mut self, event: KeyEvent) {
-        match self.mode {
+        match &self.mode {
             Mode::Lock(_) => self.handle_lock_inputs(event),
             Mode::Home(_) => self.handle_list_inputs(event),
             Mode::Help => self.handle_help_inputs(event),
@@ -29,18 +29,17 @@ impl App {
     }
 
     fn handle_lock_inputs(&mut self, event: KeyEvent) {
+        let Lock(state) = &mut self.mode else { return };
         let mut password: Option<String> = None;
 
-        if let Lock(state) = &mut self.mode {
-            match event.code {
-                KeyCode::Esc => self.exit = true,
-                KeyCode::Enter => password = Some(state.password.clone()),
-                KeyCode::Backspace => {
-                    state.password.pop();
-                }
-                KeyCode::Char(char) => state.password.push(char),
-                _ => {}
+        match event.code {
+            KeyCode::Esc => self.exit = true,
+            KeyCode::Enter => password = Some(state.password.clone()),
+            KeyCode::Backspace => {
+                state.password.pop();
             }
+            KeyCode::Char(char) => state.password.push(char),
+            _ => {}
         }
 
         if let Some(s) = password {
@@ -82,6 +81,10 @@ impl App {
                             state: ListState::default(),
                         },
                     });
+
+                    if let View(state) = &mut self.mode {
+                        state.accounts.state.select_first();
+                    }
                 }
             }
             _ => {}
@@ -92,8 +95,16 @@ impl App {
         match event.code {
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Char('h' | '?') => self.mode = Mode::Help,
-            KeyCode::Char('j') | KeyCode::Down => self.accounts.state.select_next(),
-            KeyCode::Char('k') | KeyCode::Up => self.accounts.state.select_previous(),
+            KeyCode::Char('j') | KeyCode::Down => {
+                if let Mode::View(state) = &mut self.mode {
+                    state.accounts.state.select_next();
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if let Mode::View(state) = &mut self.mode {
+                    state.accounts.state.select_previous();
+                }
+            }
             KeyCode::Esc => self.mode = Mode::Home(HomeState::default()),
             KeyCode::Char('e') => {
                 // self.mode = Mode::Edit

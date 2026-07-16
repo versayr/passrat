@@ -1,10 +1,10 @@
 use ratatui::{
+    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
     widgets::{ListState, Widget},
-    DefaultTerminal, Frame,
 };
-use rusqlite::{params, Connection, Error};
+use rusqlite::{Connection, Error, params};
 use std::io;
 use xdg::BaseDirectories;
 
@@ -157,15 +157,11 @@ impl App {
 
         let mut rows = stmt.query([])?;
 
-    //    self.accounts.list.clear();
         let mut accounts = vec![];
 
         while let Some(row) = rows.next()? {
-            // self.accounts.list.push(Account::from_row(row));
             accounts.push(Account::from_row(row));
         }
-
-        // self.accounts.state.select(Some(0));
 
         Ok(accounts)
     }
@@ -224,8 +220,8 @@ impl App {
             ],
         );
 
-            // TODO 
-            // refresh Mode::View account list after adding a new account?
+        // TODO
+        // refresh Mode::View account list after adding a new account?
         // self.get_accounts()
         //     .expect("Failed to refresh accounts list.");
     }

@@ -11,18 +11,16 @@ use ratatui::{
     },
 };
 
-use crate::{App, app::{AccountList, Mode::{Lock, View}}};
-use crate::models::Service;
+use crate::{
+    App,
+    app::Mode::{self, Lock, View},
+};
 
 impl App {
     pub fn render_lock_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let mut password = String::new();
-        let mut alert = String::new();
-
-        if let Lock(state) = &mut self.mode {
-            password.clone_from(&state.password);
-            alert.clone_from(&state.alert);
-        }
+        let Lock(state) = &mut self.mode else { return };
+        let password = state.password.clone();
+        let alert = state.alert.clone();
 
         let title = Line::from(" Login Screen ");
         let block = Block::bordered()
@@ -87,11 +85,8 @@ impl App {
     }
 
     pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let mut service = Service::default();
-
-        if let View(state) = &mut self.mode {
-            service.clone_from(&state.service);
-        }
+        let View(state) = &mut self.mode else { return };
+        let empty_list = state.accounts.list.is_empty();
 
         let title = Line::from(" View Mode ");
         let block = Block::bordered()
@@ -108,9 +103,13 @@ impl App {
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(main_layout[1]);
 
-        self.render_service_details(main_layout[0], buf, &service);
+        self.render_service_details(main_layout[0], buf);
         self.render_account_list(body_layout[0], buf);
-        self.render_account_details(body_layout[1], buf);
+        if empty_list {
+            self.render_empty_accounts_alert(body_layout[1], buf);
+        } else {
+            self.render_account_details(body_layout[1], buf);
+        }
 
         block.render(area, buf);
     }
@@ -133,7 +132,10 @@ impl App {
         block.render(area, buf);
     }
 
-    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer, service: &Service) {
+    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
+        let View(state) = &mut self.mode else { return };
+        let service = state.service.clone();
+
         let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
@@ -151,11 +153,8 @@ impl App {
     }
 
     fn render_account_list(&mut self, area: Rect, buf: &mut Buffer) {
-        let mut accounts = AccountList::default();
-
-        if let View(state) = &mut self.mode {
-            accounts.clone_from(&state.accounts);
-        }
+        let View(state) = &mut self.mode else { return };
+        let accounts = &state.accounts.clone();
 
         let block = Block::bordered()
             .border_type(BorderType::Double)
@@ -178,41 +177,27 @@ impl App {
             .highlight_spacing(HighlightSpacing::Always)
             .block(block);
 
-        // TODO
-        // the state for this should reside in Mode::View state, NOT self.accounts.state
-        StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
+        StatefulWidget::render(account_list, area, buf, &mut state.accounts.state);
     }
 
-    fn render_account_details(&self, area: Rect, buf: &mut Buffer) {
+    fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
+        let Mode::View(state) = &mut self.mode else {
+            return;
+        };
+        let selected_idx = state
+            .accounts
+            .state
+            .selected()
+            .expect("No account is selected.");
+        let account = state.accounts.list[selected_idx].clone();
+
         let details_block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNT DETAILS ] ]")
             .padding(Padding::left(1));
 
-        if self.accounts.list.is_empty() {
-            Widget::render(
-                self.construct_empty_accounts_alert().block(details_block),
-                area,
-                buf,
-            );
-        } else {
-            Widget::render(
-                self.construct_account_details().block(details_block),
-                area,
-                buf,
-            );
-        }
-    }
-
-    fn construct_account_details(&self) -> List<'_> {
         let mut lines = vec![];
-
-        let account = &self.accounts.list[self
-            .accounts
-            .state
-            .selected()
-            .expect("No account selected.")];
 
         if !account.username.is_empty() {
             lines.push(Line::from(vec![
@@ -272,16 +257,22 @@ impl App {
             ]));
         }
 
-        List::new(lines)
+        Widget::render(List::new(lines).block(details_block), area, buf);
     }
 
-    fn construct_empty_accounts_alert(&self) -> List<'_> {
+    fn render_empty_accounts_alert(&self, area: Rect, buf: &mut Buffer) {
+        let details_block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ ACCOUNT DETAILS ] ]")
+            .padding(Padding::left(1));
+
         let lines = vec![
             Line::from("No accounts found for this service"),
             Line::from("Press 'n' to add a new one"),
         ];
 
-        List::new(lines)
+        Widget::render(List::new(lines).block(details_block), area, buf);
     }
 
     fn construct_service_list(&self) -> List<'static> {
