@@ -13,7 +13,7 @@ use ratatui::{
 
 use crate::{
     App,
-    app::Mode::{self, Lock, View},
+    app::Mode::{Lock, View},
 };
 
 impl App {
@@ -43,7 +43,7 @@ impl App {
             ]),
             Line::from(alert),
         ])
-        .block(input_block);
+            .block(input_block);
 
         input.render(input_area, buf);
         block.render(area, buf);
@@ -58,7 +58,7 @@ impl App {
 
         if self.services.list.is_empty() {
             Widget::render(
-                self.construct_empty_services_alert(),
+                construct_empty_services_alert(),
                 Block::inner(&block, area),
                 buf,
             );
@@ -75,6 +75,7 @@ impl App {
         block.render(area, buf);
     }
 
+    #[allow(clippy::unused_self)]
     pub fn render_edit_mode(&mut self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Edit Mode ");
         let block = Block::bordered()
@@ -106,7 +107,7 @@ impl App {
         self.render_service_details(main_layout[0], buf);
         self.render_account_list(body_layout[0], buf);
         if empty_list {
-            self.render_empty_accounts_alert(body_layout[1], buf);
+            render_empty_accounts_alert(body_layout[1], buf);
         } else {
             self.render_account_details(body_layout[1], buf);
         }
@@ -114,6 +115,7 @@ impl App {
         block.render(area, buf);
     }
 
+    #[allow(clippy::unused_self)]
     pub fn render_help_mode(&mut self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Help Mode ");
         let block = Block::bordered()
@@ -123,6 +125,7 @@ impl App {
         block.render(area, buf);
     }
 
+    #[allow(clippy::unused_self)]
     pub fn render_shortcut_mode(&mut self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Shortcut Mode ");
         let block = Block::bordered()
@@ -171,8 +174,8 @@ impl App {
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED),
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::REVERSED),
             )
             .highlight_spacing(HighlightSpacing::Always)
             .block(block);
@@ -181,9 +184,7 @@ impl App {
     }
 
     fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
-        let Mode::View(state) = &mut self.mode else {
-            return;
-        };
+        let View(state) = &mut self.mode else { return };
         let selected_idx = state
             .accounts
             .state
@@ -201,22 +202,22 @@ impl App {
 
         if !account.username.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Username", width = 15)),
-                account.username.clone().into(),
+                    Span::raw(format!("{:.<width$}", "Username", width = 15)),
+                    account.username.clone().into(),
             ]));
         }
 
         if let Some(email) = &account.email {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Email", width = 15)),
-                email.into(),
+                    Span::raw(format!("{:.<width$}", "Email", width = 15)),
+                    email.into(),
             ]));
         }
 
         if let Some(_password) = &account.password {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Password", width = 15)),
-                format!("{{{}}}", "*").into(),
+                    Span::raw(format!("{:.<width$}", "Password", width = 15)),
+                    format!("{{{}}}", "*").into(),
             ]));
         }
 
@@ -224,53 +225,38 @@ impl App {
             && !access_token.is_empty()
         {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
-                access_token.into(),
+                    Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
+                    access_token.into(),
             ]));
         }
 
         if let Some(pin) = &account.pin {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "PIN", width = 15)),
-                pin.into(),
+                    Span::raw(format!("{:.<width$}", "PIN", width = 15)),
+                    pin.into(),
             ]));
         }
 
         if let Some(passcode) = &account.passcode {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
-                passcode.into(),
+                    Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
+                    passcode.into(),
             ]));
         }
 
         if !account.last_change.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
-                Span::raw(account.last_change.clone()),
+                    Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
+                    Span::raw(account.last_change.clone()),
             ]));
         }
 
         if !account.creation_date.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
-                Span::raw(account.creation_date.clone()),
+                    Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
+                    Span::raw(account.creation_date.clone()),
             ]));
         }
-
-        Widget::render(List::new(lines).block(details_block), area, buf);
-    }
-
-    fn render_empty_accounts_alert(&self, area: Rect, buf: &mut Buffer) {
-        let details_block = Block::bordered()
-            .border_type(BorderType::Double)
-            .title_alignment(HorizontalAlignment::Center)
-            .title("[ [ ACCOUNT DETAILS ] ]")
-            .padding(Padding::left(1));
-
-        let lines = vec![
-            Line::from("No accounts found for this service"),
-            Line::from("Press 'n' to add a new one"),
-        ];
 
         Widget::render(List::new(lines).block(details_block), area, buf);
     }
@@ -288,18 +274,34 @@ impl App {
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
-                    .add_modifier(Modifier::BOLD)
-                    .add_modifier(Modifier::REVERSED),
+                .add_modifier(Modifier::BOLD)
+                .add_modifier(Modifier::REVERSED),
             )
             .highlight_spacing(HighlightSpacing::Always)
     }
-
-    fn construct_empty_services_alert(&self) -> List<'_> {
-        let lines = vec![
-            Line::from("No services found in the database"),
-            Line::from("Press 'n' to add a new one"),
-        ];
-
-        List::new(lines)
-    }
 }
+
+fn construct_empty_services_alert() -> List<'static> {
+    let lines = vec![
+        Line::from("No services found in the database"),
+        Line::from("Press 'n' to add a new one"),
+    ];
+
+    List::new(lines)
+}
+
+fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
+    let details_block = Block::bordered()
+        .border_type(BorderType::Double)
+        .title_alignment(HorizontalAlignment::Center)
+        .title("[ [ ACCOUNT DETAILS ] ]")
+        .padding(Padding::left(1));
+
+    let lines = vec![
+        Line::from("No accounts found for this service"),
+        Line::from("Press 'n' to add a new one"),
+    ];
+
+    Widget::render(List::new(lines).block(details_block), area, buf);
+}
+

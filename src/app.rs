@@ -19,7 +19,6 @@ pub struct App {
     pub mode: Mode,
     pub conn: Option<Connection>,
     pub services: ServiceList,
-    pub accounts: AccountList,
 }
 
 #[derive(Debug)]
@@ -75,7 +74,6 @@ impl App {
             mode: Mode::Lock(LockState::default()),
             conn: None,
             services: ServiceList::default(),
-            accounts: AccountList::default(),
         }
     }
 

@@ -20,11 +20,11 @@ impl App {
     fn handle_key_events(&mut self, event: KeyEvent) {
         match &self.mode {
             Mode::Lock(_) => self.handle_lock_inputs(event),
-            Mode::Home(_) => self.handle_list_inputs(event),
-            Mode::Help => self.handle_help_inputs(event),
-            Mode::Cuts => self.handle_shortcut_inputs(event),
+            Mode::Home(_) => self.handle_home_inputs(event),
             Mode::Edit(_) => self.handle_edit_inputs(event),
             Mode::View(_) => self.handle_view_inputs(event),
+            Mode::Help => self.handle_help_inputs(event),
+            Mode::Cuts => self.handle_shortcut_inputs(event),
         }
     }
 
@@ -47,7 +47,7 @@ impl App {
         }
     }
 
-    fn handle_list_inputs(&mut self, event: KeyEvent) {
+    fn handle_home_inputs(&mut self, event: KeyEvent) {
         match event.code {
             KeyCode::Esc | KeyCode::Char('q') => self.exit = true,
             KeyCode::Char('h' | '?') => self.mode = Mode::Help,
