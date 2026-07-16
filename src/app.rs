@@ -28,8 +28,8 @@ pub enum Mode {
     Home(HomeState),
     Help,
     Cuts,
-    Edit(Target),
-    View(Service),
+    Edit(EditState),
+    View(ViewState),
 }
 
 #[derive(Debug, Default)]
@@ -44,12 +44,25 @@ pub struct HomeState {
 }
 
 #[derive(Debug, Default)]
+pub struct ViewState {
+    pub service: Service,
+    pub accounts: AccountList,
+}
+
+#[derive(Debug)]
+pub struct EditState {
+    pub target: Target,
+    // pub list: Vec<_>,
+    // pub state: ListState,
+}
+
+#[derive(Debug, Default)]
 pub struct ServiceList {
     pub list: Vec<Service>,
     pub state: ListState,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct AccountList {
     pub list: Vec<Account>,
     pub state: ListState,
@@ -132,15 +145,7 @@ impl App {
         Ok(())
     }
 
-    pub fn get_accounts(&mut self) -> Result<(), Error> {
-        let service_id = self.services.list[self
-            .services
-            .state
-            .selected()
-            .expect("No service selected.")]
-        .id
-        .expect("Failed to get service id.");
-
+    pub fn get_accounts(&mut self, service_id: u16) -> Result<Vec<Account>, Error> {
         let mut stmt = self
             .conn
             .as_mut()
@@ -152,15 +157,17 @@ impl App {
 
         let mut rows = stmt.query([])?;
 
-        self.accounts.list.clear();
+    //    self.accounts.list.clear();
+        let mut accounts = vec![];
 
         while let Some(row) = rows.next()? {
-            self.accounts.list.push(Account::from_row(row));
+            // self.accounts.list.push(Account::from_row(row));
+            accounts.push(Account::from_row(row));
         }
 
-        self.accounts.state.select(Some(0));
+        // self.accounts.state.select(Some(0));
 
-        Ok(())
+        Ok(accounts)
     }
 
     pub fn add_service(&mut self) {
@@ -217,8 +224,10 @@ impl App {
             ],
         );
 
-        self.get_accounts()
-            .expect("Failed to refresh accounts list.");
+            // TODO 
+            // refresh Mode::View account list after adding a new account?
+        // self.get_accounts()
+        //     .expect("Failed to refresh accounts list.");
     }
 
     //     fn update_account(&mut self) -> Result<(), Error> {
@@ -237,11 +246,11 @@ impl Widget for &mut App {
     {
         match &self.mode {
             Mode::Lock(_) => self.render_lock_mode(area, buf),
-            Mode::Home(_) => self.render_list_mode(area, buf),
+            Mode::Home(_) => self.render_home_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
             Mode::Edit(_) => self.render_edit_mode(area, buf),
-            Mode::View(service) => self.render_view_mode(area, buf, &service.clone()),
+            Mode::View(_) => self.render_view_mode(area, buf),
         }
     }
 }

@@ -11,7 +11,7 @@ use ratatui::{
     },
 };
 
-use crate::{App, app::Mode::Lock};
+use crate::{App, app::{AccountList, Mode::{Lock, View}}};
 use crate::models::Service;
 
 impl App {
@@ -51,8 +51,8 @@ impl App {
         block.render(area, buf);
     }
 
-    pub fn render_list_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let title = Line::from(" List Mode ");
+    pub fn render_home_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let title = Line::from(" Home Mode ");
         let block = Block::bordered()
             .title(title)
             .padding(Padding::uniform(1))
@@ -86,7 +86,13 @@ impl App {
         block.render(area, buf);
     }
 
-    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer, service: &Service) {
+    pub fn render_view_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        let mut service = Service::default();
+
+        if let View(state) = &mut self.mode {
+            service.clone_from(&state.service);
+        }
+
         let title = Line::from(" View Mode ");
         let block = Block::bordered()
             .title(title)
@@ -102,7 +108,7 @@ impl App {
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(main_layout[1]);
 
-        self.render_service_details(main_layout[0], buf, service);
+        self.render_service_details(main_layout[0], buf, &service);
         self.render_account_list(body_layout[0], buf);
         self.render_account_details(body_layout[1], buf);
 
@@ -145,13 +151,18 @@ impl App {
     }
 
     fn render_account_list(&mut self, area: Rect, buf: &mut Buffer) {
+        let mut accounts = AccountList::default();
+
+        if let View(state) = &mut self.mode {
+            accounts.clone_from(&state.accounts);
+        }
+
         let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNTS ] ]");
 
-        let accounts: Vec<ListItem> = self
-            .accounts
+        let accounts: Vec<ListItem> = accounts
             .list
             .iter()
             .map(|account| ListItem::new(Line::from(account.username.clone())))
@@ -167,6 +178,8 @@ impl App {
             .highlight_spacing(HighlightSpacing::Always)
             .block(block);
 
+        // TODO
+        // the state for this should reside in Mode::View state, NOT self.accounts.state
         StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
     }
 

@@ -1,6 +1,11 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::widgets::ListState;
 
-use crate::app::{App, HomeState, Mode::{self, Lock}};
+use crate::app::{
+    AccountList, App, HomeState,
+    Mode::{self, Lock},
+    ViewState,
+};
 
 impl App {
     pub fn handle_events(&mut self) {
@@ -69,8 +74,14 @@ impl App {
                         .selected()
                         .expect("No service is selected.")]
                     .clone();
-                    let _ = self.get_accounts();
-                    self.mode = Mode::View(service);
+
+                    self.mode = Mode::View(ViewState {
+                        service: service.clone(),
+                        accounts: AccountList {
+                            list: self.get_accounts(service.id.unwrap()).unwrap(),
+                            state: ListState::default(),
+                        },
+                    });
                 }
             }
             _ => {}
