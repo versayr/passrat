@@ -7,7 +7,7 @@ use crate::{
         Mode::{self, Lock, View},
         ViewState,
     },
-    models::Target,
+    models::{Account, Target},
 };
 
 impl App {
@@ -66,6 +66,8 @@ impl App {
 
                 self.mode = Mode::Edit(EditState {
                     target: Target::Service(service),
+                    list: vec![], // TODO supply this vec from target.fields()
+                    state: ListState::default(),
                 });
             }
             KeyCode::Char('n') => self.add_service(),
@@ -131,9 +133,18 @@ impl App {
 
                 self.mode = Mode::Edit(EditState {
                     target: Target::Account(account),
+                    list: vec![],
+                    state: ListState::default(),
                 });
             }
-            KeyCode::Char('n') => self.add_account(),
+            KeyCode::Char('n') => {
+                let state = EditState {
+                    target: Target::Account(Account::default()),
+                    list: vec![],
+                    state: ListState::default(),
+                };
+                self.mode = Mode::Edit(state);
+            }
             _ => {}
         }
     }

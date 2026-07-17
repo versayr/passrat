@@ -6,7 +6,7 @@ use crate::helpers::format_current_date;
 pub struct Service {
     pub id: Option<u16>,
     pub name: String,
-    pub url: Option<String>,
+    pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,11 +16,11 @@ pub struct Account {
     pub username: String,
     pub last_change: String,
     pub creation_date: String,
-    pub email: Option<String>,
-    pub password: Option<String>,
-    pub access_token: Option<String>,
-    pub pin: Option<String>,
-    pub passcode: Option<String>,
+    pub email: String,
+    pub password: String,
+    pub access_token: String,
+    pub pin: String,
+    pub passcode: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,8 +46,14 @@ pub struct Shortcut {
 pub enum Target {
     Service(Service),
     Account(Account),
-    //    SecurityQuestion(SecurityQuestion),
-    //    Shortcut(Shortcut),
+    SecurityQuestion(SecurityQuestion),
+    Shortcut(Shortcut),
+}
+
+#[derive(Debug, Clone)]
+pub struct Field {
+    pub label: String,
+    pub value: String,
 }
 
 impl Default for Service {
@@ -55,7 +61,7 @@ impl Default for Service {
         Self {
             id: None,
             name: "Test".into(),
-            url: Some("https://www.test.org".into()),
+            url: "https://www.test.org".into(),
         }
     }
 }
@@ -68,11 +74,11 @@ impl Default for Account {
             username: "Bruce".into(),
             last_change: format_current_date(),
             creation_date: String::new(),
-            email: None,
-            password: None,
-            access_token: None,
-            pin: None,
-            passcode: None,
+            email: String::new(),
+            password: String::new(),
+            access_token: String::new(),
+            pin: String::new(),
+            passcode: String::new(),
         }
     }
 }

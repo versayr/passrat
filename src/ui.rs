@@ -77,8 +77,8 @@ impl App {
 
     #[allow(clippy::unused_self)]
     pub fn render_edit_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        // let Edit(state) = &self.mode else { return };
-        // let target = state.target.clone();
+        let Edit(state) = &self.mode else { return };
+        let target = &state.target;
 
         let title = Line::from(" Edit Mode ");
         let block = Block::bordered()
@@ -147,11 +147,10 @@ impl App {
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ SERVICE DETAILS ] ]");
 
-        let mut service_details = vec![Line::from(format!(" {} ", service.name.clone()))];
-
-        if let Some(url) = &service.url {
-            service_details.push(Line::from(format!(" {} ", url.clone())));
-        }
+        let service_details = vec![
+            Line::from(format!(" {} ", service.name.clone())),
+            Line::from(format!(" {} ", service.url.clone())),
+        ];
 
         let header = Paragraph::new(service_details).block(block);
 
@@ -210,40 +209,38 @@ impl App {
             ]));
         }
 
-        if let Some(email) = &account.email {
+        if !account.email.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Email", width = 15)),
-                email.into(),
+                account.email.into(),
             ]));
         }
 
-        if let Some(_password) = &account.password {
+        if !account.password.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Password", width = 15)),
                 format!("{{{}}}", "*").into(),
             ]));
         }
 
-        if let Some(access_token) = &account.access_token
-            && !access_token.is_empty()
-        {
+        if !account.access_token.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
-                access_token.into(),
+                account.access_token.into(),
             ]));
         }
 
-        if let Some(pin) = &account.pin {
+        if !account.pin.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "PIN", width = 15)),
-                pin.into(),
+                account.pin.into(),
             ]));
         }
 
-        if let Some(passcode) = &account.passcode {
+        if !account.passcode.is_empty() {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
-                passcode.into(),
+                account.passcode.into(),
             ]));
         }
 

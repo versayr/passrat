@@ -11,7 +11,7 @@ use xdg::BaseDirectories;
 
 use crate::{
     db::{connect_database, init_database},
-    models::{Account, Service, Target},
+    models::{Account, Field, Service, Target},
 };
 
 pub struct App {
@@ -52,8 +52,8 @@ pub struct ViewState {
 #[derive(Debug)]
 pub struct EditState {
     pub target: Target,
-    // pub list: Vec<_>,
-    // pub state: ListState,
+    pub list: Vec<Field>,
+    pub state: ListState,
 }
 
 #[derive(Debug, Default)]
