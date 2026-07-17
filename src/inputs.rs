@@ -1,10 +1,13 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::widgets::ListState;
 
-use crate::app::{
-    AccountList, App, HomeState,
-    Mode::{self, Lock, View},
-    ViewState,
+use crate::{
+    app::{
+        AccountList, App, EditState, HomeState,
+        Mode::{self, Lock, View},
+        ViewState,
+    },
+    models::Target,
 };
 
 impl App {
@@ -54,14 +57,16 @@ impl App {
             KeyCode::Char('j') | KeyCode::Down => self.services.state.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.services.state.select_previous(),
             KeyCode::Char('e') => {
-                // let target = self.services.list[self
-                //     .services
-                //     .state
-                //     .selected()
-                //     .expect("No service is selected.")]
-                // .clone();
-                // self.mode = Mode::Edit(target);
-                todo!("Set edit target: Service.");
+                let service = self.services.list[self
+                    .services
+                    .state
+                    .selected()
+                    .expect("No service is selected.")]
+                .clone();
+
+                self.mode = Mode::Edit(EditState {
+                    target: Target::Service(service),
+                });
             }
             KeyCode::Char('n') => self.add_service(),
             KeyCode::Char('\\') => self.mode = Mode::Cuts,
@@ -87,6 +92,15 @@ impl App {
                     }
                 }
             }
+            KeyCode::Char('y') => {
+                let service = self.services.list[self
+                    .services
+                    .state
+                    .selected()
+                    .expect("No service is selected.")]
+                .clone();
+                self.clipboard.set_text(service.name).unwrap();
+            }
             _ => {}
         }
     }
@@ -107,8 +121,17 @@ impl App {
             }
             KeyCode::Esc => self.mode = Mode::Home(HomeState::default()),
             KeyCode::Char('e') => {
-                // self.mode = Mode::Edit
-                todo!("Set edit target: Account or Service.")
+                let View(state) = &self.mode else { return };
+                let account = state.accounts.list[state
+                    .accounts
+                    .state
+                    .selected()
+                    .expect("No account is selected.")]
+                .clone();
+
+                self.mode = Mode::Edit(EditState {
+                    target: Target::Account(account),
+                });
             }
             KeyCode::Char('n') => self.add_account(),
             _ => {}

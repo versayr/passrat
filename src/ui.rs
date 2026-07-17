@@ -13,7 +13,7 @@ use ratatui::{
 
 use crate::{
     App,
-    app::Mode::{Lock, View},
+    app::Mode::{Edit, Lock, View},
 };
 
 impl App {
@@ -43,7 +43,7 @@ impl App {
             ]),
             Line::from(alert),
         ])
-            .block(input_block);
+        .block(input_block);
 
         input.render(input_area, buf);
         block.render(area, buf);
@@ -77,6 +77,9 @@ impl App {
 
     #[allow(clippy::unused_self)]
     pub fn render_edit_mode(&mut self, area: Rect, buf: &mut Buffer) {
+        // let Edit(state) = &self.mode else { return };
+        // let target = state.target.clone();
+
         let title = Line::from(" Edit Mode ");
         let block = Block::bordered()
             .title(title)
@@ -174,8 +177,8 @@ impl App {
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
-                .add_modifier(Modifier::BOLD)
-                .add_modifier(Modifier::REVERSED),
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
             )
             .highlight_spacing(HighlightSpacing::Always)
             .block(block);
@@ -202,22 +205,22 @@ impl App {
 
         if !account.username.is_empty() {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Username", width = 15)),
-                    account.username.clone().into(),
+                Span::raw(format!("{:.<width$}", "Username", width = 15)),
+                account.username.clone().into(),
             ]));
         }
 
         if let Some(email) = &account.email {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Email", width = 15)),
-                    email.into(),
+                Span::raw(format!("{:.<width$}", "Email", width = 15)),
+                email.into(),
             ]));
         }
 
         if let Some(_password) = &account.password {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Password", width = 15)),
-                    format!("{{{}}}", "*").into(),
+                Span::raw(format!("{:.<width$}", "Password", width = 15)),
+                format!("{{{}}}", "*").into(),
             ]));
         }
 
@@ -225,36 +228,36 @@ impl App {
             && !access_token.is_empty()
         {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
-                    access_token.into(),
+                Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
+                access_token.into(),
             ]));
         }
 
         if let Some(pin) = &account.pin {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "PIN", width = 15)),
-                    pin.into(),
+                Span::raw(format!("{:.<width$}", "PIN", width = 15)),
+                pin.into(),
             ]));
         }
 
         if let Some(passcode) = &account.passcode {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
-                    passcode.into(),
+                Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
+                passcode.into(),
             ]));
         }
 
         if !account.last_change.is_empty() {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
-                    Span::raw(account.last_change.clone()),
+                Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
+                Span::raw(account.last_change.clone()),
             ]));
         }
 
         if !account.creation_date.is_empty() {
             lines.push(Line::from(vec![
-                    Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
-                    Span::raw(account.creation_date.clone()),
+                Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
+                Span::raw(account.creation_date.clone()),
             ]));
         }
 
@@ -274,8 +277,8 @@ impl App {
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
-                .add_modifier(Modifier::BOLD)
-                .add_modifier(Modifier::REVERSED),
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
             )
             .highlight_spacing(HighlightSpacing::Always)
     }
@@ -304,4 +307,3 @@ fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
 
     Widget::render(List::new(lines).block(details_block), area, buf);
 }
-

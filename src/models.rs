@@ -44,10 +44,10 @@ pub struct Shortcut {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub enum Target {
-    Service,
-    Account,
-    SecurityQuestion,
-    Shortcut,
+    Service(Service),
+    Account(Account),
+    //    SecurityQuestion(SecurityQuestion),
+    //    Shortcut(Shortcut),
 }
 
 impl Default for Service {

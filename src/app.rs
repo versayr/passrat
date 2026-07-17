@@ -1,3 +1,4 @@
+use arboard::Clipboard;
 use ratatui::{
     DefaultTerminal, Frame,
     buffer::Buffer,
@@ -13,12 +14,12 @@ use crate::{
     models::{Account, Service, Target},
 };
 
-#[derive(Debug)]
 pub struct App {
     pub exit: bool,
     pub mode: Mode,
     pub conn: Option<Connection>,
     pub services: ServiceList,
+    pub clipboard: Clipboard,
 }
 
 #[derive(Debug)]
@@ -74,6 +75,7 @@ impl App {
             mode: Mode::Lock(LockState::default()),
             conn: None,
             services: ServiceList::default(),
+            clipboard: Clipboard::new().unwrap(),
         }
     }
 
