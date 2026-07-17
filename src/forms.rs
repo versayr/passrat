@@ -40,11 +40,11 @@ impl Fields for Account {
             },
             Field {
                 label: "PIN".to_string(),
-                value: self.pin.clone(),
+                value: format!("{:?}", self.pin.clone()),
             },
             Field {
                 label: "Passcode".to_string(),
-                value: self.passcode.clone(),
+                value: format!("{:?}", self.passcode.clone()),
             },
             Field {
                 label: "Last Change".to_string(),

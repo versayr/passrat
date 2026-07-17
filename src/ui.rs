@@ -230,17 +230,17 @@ impl App {
             ]));
         }
 
-        if !account.pin.is_empty() {
+        if let Some(pin) = account.pin {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "PIN", width = 15)),
-                account.pin.into(),
+                format!("{pin}").into(),
             ]));
         }
 
-        if !account.passcode.is_empty() {
+        if let Some(passcode) = account.passcode {
             lines.push(Line::from(vec![
                 Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
-                account.passcode.into(),
+                format!("{passcode}").into(),
             ]));
         }
 

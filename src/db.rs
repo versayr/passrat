@@ -89,8 +89,10 @@ impl Account {
             creation_date: row
                 .get("creation_date")
                 .expect("Failed to get account creation date."),
-            pin: row.get("pin").expect("Failed to get pin."),
-            passcode: row.get("passcode").expect("Failed to get passcode."),
+//             pin: row.get("pin").expect("Failed to get pin."),
+//             passcode: row.get("passcode").expect("Failed to get passcode."),
+            pin: row.get_unwrap("pin"),
+            passcode: row.get_unwrap("passcode")
         }
     }
 }

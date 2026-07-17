@@ -19,8 +19,8 @@ pub struct Account {
     pub email: String,
     pub password: String,
     pub access_token: String,
-    pub pin: String,
-    pub passcode: String,
+    pub pin: Option<u16>,
+    pub passcode: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -77,8 +77,8 @@ impl Default for Account {
             email: String::new(),
             password: String::new(),
             access_token: String::new(),
-            pin: String::new(),
-            passcode: String::new(),
+            pin: None,
+            passcode: None,
         }
     }
 }
