@@ -43,7 +43,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             last_change TEXT NOT NULL, 
             creation_date TEXT NOT NULL, 
             pin INTEGER,
-            passcode TEXT
+            passcode INTEGER
         )",
         [],
     )
@@ -89,10 +89,10 @@ impl Account {
             creation_date: row
                 .get("creation_date")
                 .expect("Failed to get account creation date."),
-//             pin: row.get("pin").expect("Failed to get pin."),
-//             passcode: row.get("passcode").expect("Failed to get passcode."),
+            //             pin: row.get("pin").expect("Failed to get pin."),
+            //             passcode: row.get("passcode").expect("Failed to get passcode."),
             pin: row.get_unwrap("pin"),
-            passcode: row.get_unwrap("passcode")
+            passcode: row.get_unwrap("passcode"),
         }
     }
 }

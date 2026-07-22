@@ -10,7 +10,7 @@ impl Fields for Service {
             Field {
                 label: "Service Name".to_string(),
                 value: self.name.clone(),
-            }, 
+            },
             Field {
                 label: "URL".to_string(),
                 value: self.url.clone(),
@@ -25,7 +25,7 @@ impl Fields for Account {
             Field {
                 label: "Username".to_string(),
                 value: self.username.clone(),
-            }, 
+            },
             Field {
                 label: "Email".to_string(),
                 value: self.email.clone(),
@@ -40,11 +40,19 @@ impl Fields for Account {
             },
             Field {
                 label: "PIN".to_string(),
-                value: format!("{:?}", self.pin.clone()),
+                value: if let Some(pin) = self.pin {
+                    pin.clone().to_string()
+                } else {
+                    String::new()
+                },
             },
             Field {
                 label: "Passcode".to_string(),
-                value: format!("{:?}", self.passcode.clone()),
+                value: if let Some(passcode) = self.passcode {
+                    passcode.clone().to_string()
+                } else {
+                    String::new()
+                },
             },
             Field {
                 label: "Last Change".to_string(),
@@ -75,12 +83,10 @@ impl Fields for SecurityQuestion {
 
 impl Fields for Shortcut {
     fn fields(&self) -> Vec<Field> {
-        vec![
-            Field {
-                label: "Sequence".to_string(),
-                value: self.sequence.clone(),
-            },
-        ]
+        vec![Field {
+            label: "Sequence".to_string(),
+            value: self.sequence.clone(),
+        }]
     }
 }
 
@@ -88,14 +94,14 @@ impl Fields for Shortcut {
 // trait Form {
 //     fn form(&self) -> List<'_>;
 // }
-// 
+//
 // impl Form for Service {
 //     fn form(&self) -> List<'_> {
 //         let list_items: Vec<ListItem> = vec![
 //             ListItem::new(self.name.clone()),
 //             ListItem::new(self.url.as_ref().expect("No url for this service.").clone()),
 //         ];
-// 
+//
 //         List::new(list_items)
 //             .highlight_symbol(" > ")
 //             .highlight_style(
@@ -106,7 +112,7 @@ impl Fields for Shortcut {
 //             .highlight_spacing(HighlightSpacing::Always)
 //     }
 // }
-// 
+//
 // impl Form for Account {
 //     fn form(&self) -> List<'_> {
 //         let list_items: Vec<ListItem> = vec![
@@ -149,7 +155,7 @@ impl Fields for Shortcut {
 //             ListItem::new(format!("Last Change: {}", self.last_change.clone())),
 //             ListItem::new(format!("Account Created: {}", self.creation_date.clone())),
 //         ];
-// 
+//
 //         List::new(list_items)
 //             .highlight_symbol(" > ")
 //             .highlight_style(
@@ -160,4 +166,3 @@ impl Fields for Shortcut {
 //             .highlight_spacing(HighlightSpacing::Always)
 //     }
 // }
-

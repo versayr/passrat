@@ -77,14 +77,42 @@ impl App {
 
     #[allow(clippy::unused_self)]
     pub fn render_edit_mode(&mut self, area: Rect, buf: &mut Buffer) {
-        let Edit(state) = &self.mode else { return };
-        let target = &state.target;
+        let Edit(state) = &mut self.mode else { return };
+        let selected = state.state.selected();
 
         let title = Line::from(" Edit Mode ");
         let block = Block::bordered()
             .title(title)
             .border_type(BorderType::Rounded);
 
+        let fields: Vec<ListItem> = state
+            .list
+            .iter()
+            .enumerate()
+            .map(|(idx, field)| {
+                let value = if Some(idx) == selected {
+                    format!("[ {} ]", field.value)
+                } else {
+                    format!("  {}  ", field.value)
+                };
+
+                ListItem::from(Line::from(vec![
+                    format!("[ {: <width$}] ", field.label, width = 20).into(),
+                    value.into(),
+                ]))
+            })
+            .collect();
+
+        let list = List::new(fields)
+            .highlight_symbol(" > ")
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
+            .highlight_spacing(HighlightSpacing::Always);
+
+        StatefulWidget::render(list, Block::inner(&block, area), buf, &mut state.state);
         block.render(area, buf);
     }
 
@@ -204,56 +232,56 @@ impl App {
 
         if !account.username.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Username", width = 15)),
+                Span::raw(format!("{: <width$}", "Username", width = 15)),
                 account.username.clone().into(),
             ]));
         }
 
         if !account.email.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Email", width = 15)),
+                Span::raw(format!("{: <width$}", "Email", width = 15)),
                 account.email.into(),
             ]));
         }
 
         if !account.password.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Password", width = 15)),
+                Span::raw(format!("{: <width$}", "Password", width = 15)),
                 format!("{{{}}}", "*").into(),
             ]));
         }
 
         if !account.access_token.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Access Token", width = 15)),
+                Span::raw(format!("{: <width$}", "Access Token", width = 15)),
                 account.access_token.into(),
             ]));
         }
 
         if let Some(pin) = account.pin {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "PIN", width = 15)),
+                Span::raw(format!("{: <width$}", "PIN", width = 15)),
                 format!("{pin}").into(),
             ]));
         }
 
         if let Some(passcode) = account.passcode {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Passcode", width = 15)),
+                Span::raw(format!("{: <width$}", "Passcode", width = 15)),
                 format!("{passcode}").into(),
             ]));
         }
 
         if !account.last_change.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Last Change", width = 15)),
+                Span::raw(format!("{: <width$}", "Last Change", width = 15)),
                 Span::raw(account.last_change.clone()),
             ]));
         }
 
         if !account.creation_date.is_empty() {
             lines.push(Line::from(vec![
-                Span::raw(format!("{:.<width$}", "Account Created", width = 15)),
+                Span::raw(format!("{: <width$}", "Account Created", width = 15)),
                 Span::raw(account.creation_date.clone()),
             ]));
         }

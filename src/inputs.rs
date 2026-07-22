@@ -7,7 +7,8 @@ use crate::{
         Mode::{self, Lock, View},
         ViewState,
     },
-    models::{Account, Target},
+    forms::Fields,
+    models::{Account, Service},
 };
 
 impl App {
@@ -21,7 +22,7 @@ impl App {
     }
 
     fn handle_key_events(&mut self, event: KeyEvent) {
-        match &self.mode {
+        match self.mode {
             Mode::Lock(_) => self.handle_lock_inputs(event),
             Mode::Home(_) => self.handle_home_inputs(event),
             Mode::Edit(_) => self.handle_edit_inputs(event),
@@ -64,13 +65,22 @@ impl App {
                     .expect("No service is selected.")]
                 .clone();
 
-                self.mode = Mode::Edit(EditState {
-                    target: Target::Service(service),
-                    list: vec![], // TODO supply this vec from target.fields()
+                let mut editstate = EditState {
+                    list: service.fields(),
                     state: ListState::default(),
-                });
+                };
+                editstate.state.select_first();
+                self.mode = Mode::Edit(editstate);
             }
-            KeyCode::Char('n') => self.add_service(),
+            KeyCode::Char('n') => {
+                let service = Service::default();
+                let mut editstate = EditState {
+                    list: service.fields(),
+                    state: ListState::default(),
+                };
+                editstate.state.select_first();
+                self.mode = Mode::Edit(editstate);
+            }
             KeyCode::Char('\\') => self.mode = Mode::Cuts,
             KeyCode::Enter => {
                 if !self.services.list.is_empty() {
@@ -131,19 +141,20 @@ impl App {
                     .expect("No account is selected.")]
                 .clone();
 
-                self.mode = Mode::Edit(EditState {
-                    target: Target::Account(account),
-                    list: vec![],
-                    state: ListState::default(),
-                });
-            }
-            KeyCode::Char('n') => {
-                let state = EditState {
-                    target: Target::Account(Account::default()),
-                    list: vec![],
+                let mut editstate = EditState {
+                    list: account.fields(),
                     state: ListState::default(),
                 };
-                self.mode = Mode::Edit(state);
+                editstate.state.select_first();
+                self.mode = Mode::Edit(editstate);
+            }
+            KeyCode::Char('n') => {
+                let mut editstate = EditState {
+                    list: Account::default().fields(),
+                    state: ListState::default(),
+                };
+                editstate.state.select_first();
+                self.mode = Mode::Edit(editstate);
             }
             _ => {}
         }
@@ -151,9 +162,20 @@ impl App {
 
     fn handle_edit_inputs(&mut self, event: KeyEvent) {
         match event.code {
+            // consider setting this to return to previous mode instead
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Char('h' | '?') => self.mode = Mode::Help,
             KeyCode::Esc => self.mode = Mode::Home(HomeState::default()),
+            KeyCode::Char('j') | KeyCode::Down => {
+                if let Mode::Edit(state) = &mut self.mode {
+                    state.state.select_next();
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if let Mode::Edit(state) = &mut self.mode {
+                    state.state.select_previous();
+                }
+            }
             _ => {}
         }
     }
