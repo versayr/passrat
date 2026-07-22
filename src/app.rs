@@ -144,7 +144,7 @@ impl App {
         Ok(())
     }
 
-    pub fn get_accounts(&mut self, service_id: u16) -> Result<Vec<Account>, Error> {
+    pub fn get_accounts(&mut self, service_id: u32) -> Result<Vec<Account>, Error> {
         let mut stmt = self
             .conn
             .as_mut()

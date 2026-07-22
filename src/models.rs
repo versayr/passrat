@@ -4,30 +4,30 @@ use crate::helpers::format_current_date;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
-    pub id: Option<u16>,
+    pub id: Option<u32>,
     pub name: String,
     pub url: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
-    pub id: Option<u16>,
-    pub service_id: u16,
+    pub id: Option<u32>,
+    pub service_id: u32,
     pub username: String,
     pub last_change: String,
     pub creation_date: String,
     pub email: String,
     pub password: String,
     pub access_token: String,
-    pub pin: Option<u16>,
-    pub passcode: Option<u16>,
+    pub pin: Option<u32>,
+    pub passcode: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct SecurityQuestion {
-    pub id: Option<u16>,
-    pub account_id: u16,
+    pub id: Option<u32>,
+    pub account_id: u32,
     pub question: String,
     pub answer: String,
 }
@@ -35,8 +35,8 @@ pub struct SecurityQuestion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(dead_code)]
 pub struct Shortcut {
-    pub id: Option<u16>,
-    pub account_id: u16,
+    pub id: Option<u32>,
+    pub account_id: u32,
     pub field: String,
     pub sequence: String,
 }
