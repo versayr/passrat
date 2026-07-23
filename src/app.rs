@@ -209,8 +209,8 @@ impl App {
                     .expect("No selected service.")]
                 .id,
                 account.username,
-                account.last_change,
-                account.creation_date,
+                account.last_change.format("%Y-%m-%d").to_string(),
+                account.creation_date.format("%Y-%m-%d").to_string(),
                 account.email,
                 account.password,
                 account.access_token,

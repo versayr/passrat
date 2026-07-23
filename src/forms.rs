@@ -56,11 +56,11 @@ impl Fields for Account {
             },
             Field {
                 label: "Last Change".to_string(),
-                value: self.last_change.clone(),
+                value: self.last_change.format("%Y-%m-%d").to_string(),
             },
             Field {
                 label: "Account Created".to_string(),
-                value: self.creation_date.clone(),
+                value: self.creation_date.format("%Y-%m-%d").to_string(),
             },
         ]
     }

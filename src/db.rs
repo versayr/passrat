@@ -1,3 +1,4 @@
+use chrono::NaiveDate;
 use rusqlite::{Connection, Error, Row};
 use std::path::Path;
 use xdg::BaseDirectories;
@@ -76,6 +77,18 @@ pub fn init_database(password: &str) -> Result<(), Error> {
 
 impl Account {
     pub fn from_row(row: &Row<'_>) -> Account {
+        let last_change_string: String = row
+            .get("last_change")
+            .expect("Failed to get last change date.");
+        let creation_date_string: String = row
+            .get("creation_date")
+            .expect("Failed to get last change date.");
+
+        let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
+            .expect("Failed to parse last change date (expected YYYY-MM-DD).");
+        let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")
+            .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
+
         Account {
             id: row.get("id").expect("Failed to get row id."),
             service_id: row.get("service_id").expect("Failed to get service id."),
@@ -85,12 +98,9 @@ impl Account {
             access_token: row
                 .get("access_token")
                 .expect("Failed to get access token."),
-            last_change: row.get("last_change").expect("Failed to get last change."),
-            creation_date: row
-                .get("creation_date")
-                .expect("Failed to get account creation date."),
-            //             pin: row.get("pin").expect("Failed to get pin."),
-            //             passcode: row.get("passcode").expect("Failed to get passcode."),
+            // last_change: last_change.to_string(),
+            last_change,
+            creation_date,
             pin: row.get_unwrap("pin"),
             passcode: row.get_unwrap("passcode"),
         }

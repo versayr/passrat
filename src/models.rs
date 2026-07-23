@@ -1,6 +1,5 @@
+use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
-
-use crate::helpers::format_current_date;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Service {
@@ -14,8 +13,8 @@ pub struct Account {
     pub id: Option<u32>,
     pub service_id: u32,
     pub username: String,
-    pub last_change: String,
-    pub creation_date: String,
+    pub last_change: NaiveDate,
+    pub creation_date: NaiveDate,
     pub email: String,
     pub password: String,
     pub access_token: String,
@@ -71,9 +70,9 @@ impl Default for Account {
         Self {
             id: None,
             service_id: 1,
-            username: "Bruce".into(),
-            last_change: format_current_date(),
-            creation_date: String::new(),
+            username: String::new(),
+            last_change: Local::now().date_naive(),
+            creation_date: Local::now().date_naive(),
             email: String::new(),
             password: String::new(),
             access_token: String::new(),

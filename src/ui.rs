@@ -14,6 +14,7 @@ use ratatui::{
 use crate::{
     App,
     app::Mode::{Edit, Lock, View},
+    helpers::{construct_detail_field, format_current_date},
 };
 
 impl App {
@@ -231,60 +232,47 @@ impl App {
         let mut lines = vec![];
 
         if !account.username.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Username", width = 15)),
-                account.username.clone().into(),
-            ]));
+            lines.push(construct_detail_field("Username", &account.username, 17));
         }
 
         if !account.email.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Email", width = 15)),
-                account.email.into(),
-            ]));
+            lines.push(construct_detail_field("Email", &account.email, 17));
         }
 
         if !account.password.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Password", width = 15)),
-                format!("{{{}}}", "*").into(),
-            ]));
+            lines.push(construct_detail_field("Password", "{*}", 17));
         }
 
         if !account.access_token.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Access Token", width = 15)),
-                account.access_token.into(),
-            ]));
+            lines.push(construct_detail_field(
+                "Access Token",
+                &account.access_token,
+                17,
+            ));
         }
 
         if let Some(pin) = account.pin {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "PIN", width = 15)),
-                format!("{pin}").into(),
-            ]));
+            lines.push(construct_detail_field("PIN", &pin.to_string(), 17));
         }
 
         if let Some(passcode) = account.passcode {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Passcode", width = 15)),
-                format!("{passcode}").into(),
-            ]));
+            lines.push(construct_detail_field(
+                "Passcode",
+                &passcode.to_string(),
+                17,
+            ));
         }
 
-        if !account.last_change.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Last Change", width = 15)),
-                Span::raw(account.last_change.clone()),
-            ]));
-        }
-
-        if !account.creation_date.is_empty() {
-            lines.push(Line::from(vec![
-                Span::raw(format!("{: <width$}", "Account Created", width = 15)),
-                Span::raw(account.creation_date.clone()),
-            ]));
-        }
+        lines.push(construct_detail_field(
+            "Last Change",
+            &format_current_date(account.last_change),
+            17,
+        ));
+        lines.push(construct_detail_field(
+            "Account Created",
+            &format_current_date(account.creation_date),
+            17,
+        ));
 
         Widget::render(List::new(lines).block(details_block), area, buf);
     }
