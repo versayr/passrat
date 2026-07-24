@@ -5,14 +5,14 @@ use serde::{Deserialize, Serialize};
 pub struct Service {
     pub id: Option<u32>,
     pub name: String,
-    pub url: String,
+    pub url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Account {
     pub id: Option<u32>,
     pub service_id: u32,
-    pub username: String,
+    pub username: Option<String>,
     pub last_change: NaiveDate,
     pub creation_date: NaiveDate,
     pub email: String,
@@ -60,7 +60,7 @@ impl Default for Service {
         Self {
             id: None,
             name: "Test".into(),
-            url: "https://www.test.org".into(),
+            url: None,
         }
     }
 }
@@ -70,7 +70,7 @@ impl Default for Account {
         Self {
             id: None,
             service_id: 1,
-            username: String::new(),
+            username: None,
             last_change: Local::now().date_naive(),
             creation_date: Local::now().date_naive(),
             email: String::new(),

@@ -1,0 +1,188 @@
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::{
+    buffer::Buffer, layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect}, style::{Modifier, Style}, text::Line, widgets::{Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget},
+};
+
+use crate::{helpers::construct_detail_list, models::{Account, Field, Service}};
+
+#[derive(Debug, Default)]
+pub struct View {
+    pub service: Service,
+    pub accounts: AccountList,
+    pub details: DetailList,
+    pub selected: Pane,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct AccountList {
+    pub list: Vec<Account>,
+    pub state: ListState,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct DetailList {
+    pub list: Vec<Field>,
+    pub state: ListState,
+}
+
+#[derive(Debug)]
+pub enum ViewAction {
+    Edit(Account),
+    Return,
+    Help,
+    Quit,
+    None,
+}
+
+#[derive(Debug, Default)]
+pub enum Pane {
+    #[default]
+    Left, 
+    Right,
+}
+
+impl View {
+    pub fn handle_inputs(&mut self, event: KeyEvent) -> ViewAction {
+        match event.code {
+            KeyCode::Char('q') | KeyCode::Esc => ViewAction::Return,
+            KeyCode::Char('h' | '?') => ViewAction::Help,
+            KeyCode::Char('j') | KeyCode::Down => {
+                self.accounts.state.select_next();
+                ViewAction::None
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                self.accounts.state.select_previous();
+                ViewAction::None
+            }
+            KeyCode::Char('e') => {
+                let account = &self.accounts.list[self
+                    .accounts
+                    .state
+                    .selected()
+                    .expect("No account is selected.")];
+
+                ViewAction::Edit(account.clone())
+            }
+            KeyCode::Char('n') => {
+                ViewAction::Edit(Account::default())
+            }
+            _ => ViewAction::None
+        }
+    }
+
+    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
+        let name = &self.service.name;
+        let url = self.service.url.as_deref().unwrap_or("");
+
+        let block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ SERVICE DETAILS ] ]");
+
+        let service_details = vec![
+            Line::from(format!(" {name} ")),
+            Line::from(format!(" {url} ")),
+        ];
+
+        let header = Paragraph::new(service_details).block(block);
+
+        header.render(area, buf);
+    }
+
+    fn render_account_list(&mut self, area: Rect, buf: &mut Buffer) {
+        let accounts = &self.accounts.clone();
+
+        let block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ ACCOUNTS ] ]");
+
+        let accounts: Vec<ListItem> = accounts
+            .list
+            .iter()
+            .map(|account| {
+                ListItem::new(Line::from(
+                    account.username.clone().unwrap_or(account.email.clone()),
+                ))
+            })
+            .collect();
+
+        let account_list = List::new(accounts)
+            .highlight_symbol(" > ")
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            )
+            .highlight_spacing(HighlightSpacing::Always)
+            .block(block);
+
+        StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
+    }
+
+    fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
+        let selected_idx = self
+            .accounts
+            .state
+            .selected()
+            .expect("No account is selected.");
+        let account = &self.accounts.list[selected_idx];
+
+        let block = Block::bordered()
+            .border_type(BorderType::Double)
+            .title_alignment(HorizontalAlignment::Center)
+            .title("[ [ ACCOUNT DETAILS ] ]")
+            .padding(Padding::left(1));
+
+        let list = construct_detail_list(account).block(block);
+
+        StatefulWidget::render(list, area, buf, &mut self.details.state);
+    }
+}
+
+impl Widget for &mut View {
+    fn render(self, area: Rect, buf: &mut Buffer)
+    where
+        Self: Sized,
+    {
+        let title = Line::from(" View Mode ");
+        let block = Block::bordered()
+            .title(title)
+            .border_type(BorderType::Rounded);
+
+        let main_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(vec![Constraint::Length(4), Constraint::Fill(1)])
+            .split(Block::inner(&block, area));
+
+        let body_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
+            .split(main_layout[1]);
+
+        self.render_service_details(main_layout[0], buf);
+        self.render_account_list(body_layout[0], buf);
+        if self.accounts.list.is_empty() {
+            render_empty_accounts_alert(body_layout[1], buf);
+        } else {
+            self.render_account_details(body_layout[1], buf);
+        }
+
+        block.render(area, buf);
+    }
+}
+
+fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
+    let details_block = Block::bordered()
+        .border_type(BorderType::Double)
+        .title_alignment(HorizontalAlignment::Center)
+        .title("[ [ ACCOUNT DETAILS ] ]")
+        .padding(Padding::left(1));
+
+    let lines = vec![
+        Line::from("No accounts found for this service"),
+        Line::from("Press 'n' to add a new one"),
+    ];
+
+    Widget::render(List::new(lines).block(details_block), area, buf);
+}

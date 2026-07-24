@@ -1,17 +1,13 @@
 use arboard::Clipboard;
 use ratatui::{
-    DefaultTerminal, Frame,
-    buffer::Buffer,
-    layout::Rect,
-    widgets::{ListState, Widget},
+    DefaultTerminal, Frame, buffer::Buffer, layout::Rect, widgets::{ListState, Widget},
 };
 use rusqlite::{Connection, Error, params};
 use std::io;
 use xdg::BaseDirectories;
 
 use crate::{
-    db::{connect_database, init_database},
-    models::{Account, Field, Service},
+    db::{connect_database, init_database}, modes::lock::Lock, models::{Account, Field, Service}, modes::view::View,
 };
 
 pub struct App {
@@ -24,29 +20,17 @@ pub struct App {
 
 #[derive(Debug)]
 pub enum Mode {
-    Lock(LockState),
+    Lock(Lock),
     Home(HomeState),
     Help,
     Cuts,
     Edit(EditState),
-    View(ViewState),
-}
-
-#[derive(Debug, Default)]
-pub struct LockState {
-    pub password: String,
-    pub alert: String,
+    View(View),
 }
 
 #[derive(Debug, Default)]
 pub struct HomeState {
     pub filter: String,
-}
-
-#[derive(Debug, Default)]
-pub struct ViewState {
-    pub service: Service,
-    pub accounts: AccountList,
 }
 
 #[derive(Debug)]
@@ -61,17 +45,11 @@ pub struct ServiceList {
     pub state: ListState,
 }
 
-#[derive(Debug, Default, Clone)]
-pub struct AccountList {
-    pub list: Vec<Account>,
-    pub state: ListState,
-}
-
 impl App {
     pub fn new() -> Self {
         Self {
             exit: false,
-            mode: Mode::Lock(LockState::default()),
+            mode: Mode::Lock(Lock::default()),
             conn: None,
             services: ServiceList::default(),
             clipboard: Clipboard::new().unwrap(),
@@ -106,15 +84,15 @@ impl App {
                 self.mode = Mode::Home(HomeState::default());
                 self.services.state.select(Some(0));
             } else {
-                self.mode = Mode::Lock(LockState {
-                    password: String::new(),
-                    alert: "Incorrect input - please try again.".into(),
+                self.mode = Mode::Lock(Lock {
+                    input: String::new(),
+                    alert: "Incorrect password - please try again.".into(),
                 });
             }
         } else {
             let _ = init_database(password);
-            self.mode = Mode::Lock(LockState {
-                password: String::new(),
+            self.mode = Mode::Lock(Lock {
+                input: String::new(),
                 alert: "Database created - please enter passphrase again.".into(),
             });
         }
@@ -239,13 +217,13 @@ impl Widget for &mut App {
     where
         Self: Sized,
     {
-        match &self.mode {
-            Mode::Lock(_) => self.render_lock_mode(area, buf),
+        match &mut self.mode {
+            Mode::Lock(lock) => lock.render(area, buf),
             Mode::Home(_) => self.render_home_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
             Mode::Edit(_) => self.render_edit_mode(area, buf),
-            Mode::View(_) => self.render_view_mode(area, buf),
+            Mode::View(view) => view.render(area, buf),
         }
     }
 }

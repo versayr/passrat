@@ -83,22 +83,24 @@ impl Account {
         let creation_date_string: String = row
             .get("creation_date")
             .expect("Failed to get last change date.");
+        let username: Option<String> = row.get("username").expect("Failed to get username.");
+
 
         let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
         let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")
             .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
+        let username = username.and_then(|s| (!s.is_empty()).then_some(s));
 
         Account {
             id: row.get("id").expect("Failed to get row id."),
             service_id: row.get("service_id").expect("Failed to get service id."),
-            username: row.get("username").expect("Failed to get username."),
+            username,
             email: row.get("email").expect("Failed to get email."),
             password: row.get("password").expect("Failed to get password."),
             access_token: row
                 .get("access_token")
                 .expect("Failed to get access token."),
-            // last_change: last_change.to_string(),
             last_change,
             creation_date,
             pin: row.get_unwrap("pin"),

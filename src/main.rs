@@ -7,6 +7,10 @@ mod helpers;
 mod inputs;
 mod models;
 mod ui;
+mod modes {
+    pub mod view;
+    pub mod lock;
+}
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
