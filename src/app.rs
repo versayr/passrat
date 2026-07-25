@@ -1,13 +1,18 @@
 use arboard::Clipboard;
 use ratatui::{
-    DefaultTerminal, Frame, buffer::Buffer, layout::Rect, widgets::{ListState, Widget},
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{ListState, Widget},
+    DefaultTerminal, Frame,
 };
-use rusqlite::{Connection, Error, params};
+use rusqlite::{fallible_iterator::FallibleIterator, params, Connection, Error};
 use std::io;
 use xdg::BaseDirectories;
 
 use crate::{
-    db::{connect_database, init_database}, modes::lock::Lock, models::{Account, Field, Service}, modes::view::View,
+    db::{connect_database, init_database},
+    models::{Account, Service},
+    modes::{edit::Edit, lock::Lock, view::View},
 };
 
 pub struct App {
@@ -24,19 +29,13 @@ pub enum Mode {
     Home(HomeState),
     Help,
     Cuts,
-    Edit(EditState),
+    Edit(Edit),
     View(View),
 }
 
 #[derive(Debug, Default)]
 pub struct HomeState {
     pub filter: String,
-}
-
-#[derive(Debug)]
-pub struct EditState {
-    pub list: Vec<Field>,
-    pub state: ListState,
 }
 
 #[derive(Debug, Default)]
@@ -123,24 +122,16 @@ impl App {
     }
 
     pub fn get_accounts(&mut self, service_id: u32) -> Result<Vec<Account>, Error> {
-        let mut stmt = self
+        self
             .conn
             .as_mut()
             .expect("Failed to connect to database.")
             .prepare(&format!(
                 "SELECT * FROM accounts WHERE service_id = {service_id} ORDER BY username"
             ))
-            .expect("Failed to prepare statement.");
-
-        let mut rows = stmt.query([])?;
-
-        let mut accounts = vec![];
-
-        while let Some(row) = rows.next()? {
-            accounts.push(Account::from_row(row));
-        }
-
-        Ok(accounts)
+            .expect("Failed to prepare statement.")
+            .query([])?
+            .map(|row| Ok(Account::from_row(row))).collect()
     }
 
     pub fn add_service(&mut self) {
@@ -222,7 +213,7 @@ impl Widget for &mut App {
             Mode::Home(_) => self.render_home_mode(area, buf),
             Mode::Help => self.render_help_mode(area, buf),
             Mode::Cuts => self.render_shortcut_mode(area, buf),
-            Mode::Edit(_) => self.render_edit_mode(area, buf),
+            Mode::Edit(edit) => edit.render(area, buf),
             Mode::View(view) => view.render(area, buf),
         }
     }

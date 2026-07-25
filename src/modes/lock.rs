@@ -1,17 +1,23 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::{buffer::Buffer, layout::{Constraint, Rect}, style::Style, text::{Line, Span}, widgets::{Block, BorderType, Padding, Paragraph, Widget}};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Rect},
+    style::Style,
+    text::{Line, Span},
+    widgets::{Block, BorderType, Padding, Paragraph, Widget},
+};
 
 #[derive(Debug, Default)]
 pub struct Lock {
-    pub input: String, 
-    pub alert: String
+    pub input: String,
+    pub alert: String,
 }
 
 #[derive(Debug)]
 pub enum LockAction {
-    SubmitPassword, 
+    SubmitPassword,
     Quit,
-    None
+    None,
 }
 
 impl Lock {
@@ -27,7 +33,7 @@ impl Lock {
                 self.input.push(char);
                 LockAction::None
             }
-            _ => LockAction::None
+            _ => LockAction::None,
         }
     }
 }
@@ -35,7 +41,7 @@ impl Lock {
 impl Widget for &Lock {
     fn render(self, area: Rect, buf: &mut Buffer)
     where
-        Self: Sized
+        Self: Sized,
     {
         let title = Line::from(" Login Screen ");
         let block = Block::bordered()

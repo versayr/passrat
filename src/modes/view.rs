@@ -1,9 +1,19 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect}, style::{Modifier, Style}, text::Line, widgets::{Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget},
+    buffer::Buffer,
+    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
+    style::{Modifier, Style},
+    text::Line,
+    widgets::{
+        Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
+        StatefulWidget, Widget,
+    },
 };
 
-use crate::{helpers::construct_detail_list, models::{Account, Field, Service}};
+use crate::{
+    helpers::construct_detail_list,
+    models::{Account, Field, Service},
+};
 
 #[derive(Debug, Default)]
 pub struct View {
@@ -37,7 +47,7 @@ pub enum ViewAction {
 #[derive(Debug, Default)]
 pub enum Pane {
     #[default]
-    Left, 
+    Left,
     Right,
 }
 
@@ -63,10 +73,24 @@ impl View {
 
                 ViewAction::Edit(account.clone())
             }
-            KeyCode::Char('n') => {
-                ViewAction::Edit(Account::default())
-            }
-            _ => ViewAction::None
+            KeyCode::Char('n') => ViewAction::Edit(Account::default()),
+            _ => ViewAction::None,
+        }
+    }
+
+    pub fn new(service: &Service, list: Vec<Account>) -> View {
+        let mut accounts = AccountList {
+            list,
+            state: ListState::default(),
+        };
+
+        accounts.state.select_first();
+
+        View {
+            service: service.clone(),
+            accounts,
+            details: DetailList::default(),
+            selected: Pane::Left,
         }
     }
 
@@ -107,7 +131,7 @@ impl View {
             })
             .collect();
 
-        let account_list = List::new(accounts)
+        let list = List::new(accounts)
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
@@ -117,7 +141,7 @@ impl View {
             .highlight_spacing(HighlightSpacing::Always)
             .block(block);
 
-        StatefulWidget::render(account_list, area, buf, &mut self.accounts.state);
+        StatefulWidget::render(list, area, buf, &mut self.accounts.state);
     }
 
     fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
@@ -173,7 +197,7 @@ impl Widget for &mut View {
 }
 
 fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
-    let details_block = Block::bordered()
+    let block = Block::bordered()
         .border_type(BorderType::Double)
         .title_alignment(HorizontalAlignment::Center)
         .title("[ [ ACCOUNT DETAILS ] ]")
@@ -184,5 +208,5 @@ fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
         Line::from("Press 'n' to add a new one"),
     ];
 
-    Widget::render(List::new(lines).block(details_block), area, buf);
+    Widget::render(List::new(lines).block(block), area, buf);
 }

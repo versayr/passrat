@@ -85,7 +85,6 @@ impl Account {
             .expect("Failed to get last change date.");
         let username: Option<String> = row.get("username").expect("Failed to get username.");
 
-
         let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
         let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")

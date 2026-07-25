@@ -15,7 +15,7 @@ impl Fields for Service {
                 label: "URL".to_string(),
                 value: if let Some(url) = &self.url {
                     url.clone()
-                } else { 
+                } else {
                     String::new()
                 },
             },

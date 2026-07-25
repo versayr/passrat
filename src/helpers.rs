@@ -22,50 +22,50 @@ pub fn construct_detail_field(label: &str, value: &str, width: usize) -> Line<'s
 }
 
 pub fn construct_detail_list(account: &Account) -> List<'_> {
-        let mut lines = vec![];
+    let mut lines = vec![];
 
-        if let Some(username) = &account.username {
-            lines.push(construct_detail_field("Username", username, 17));
-        }
+    if let Some(username) = &account.username {
+        lines.push(construct_detail_field("Username", username, 17));
+    }
 
-        if !account.email.is_empty() {
-            lines.push(construct_detail_field("Email", &account.email, 17));
-        }
+    if !account.email.is_empty() {
+        lines.push(construct_detail_field("Email", &account.email, 17));
+    }
 
-        if !account.password.is_empty() {
-            lines.push(construct_detail_field("Password", "{*}", 17));
-        }
+    if !account.password.is_empty() {
+        lines.push(construct_detail_field("Password", "{*}", 17));
+    }
 
-        if !account.access_token.is_empty() {
-            lines.push(construct_detail_field(
-                "Access Token",
-                &account.access_token,
-                17,
-            ));
-        }
-
-        if let Some(pin) = account.pin {
-            lines.push(construct_detail_field("PIN", &pin.to_string(), 17));
-        }
-
-        if let Some(passcode) = account.passcode {
-            lines.push(construct_detail_field(
-                "Passcode",
-                &passcode.to_string(),
-                17,
-            ));
-        }
-
+    if !account.access_token.is_empty() {
         lines.push(construct_detail_field(
-            "Last Change",
-            &format_current_date(account.last_change),
+            "Access Token",
+            &account.access_token,
             17,
         ));
+    }
+
+    if let Some(pin) = account.pin {
+        lines.push(construct_detail_field("PIN", &pin.to_string(), 17));
+    }
+
+    if let Some(passcode) = account.passcode {
         lines.push(construct_detail_field(
-            "Account Created",
-            &format_current_date(account.creation_date),
+            "Passcode",
+            &passcode.to_string(),
             17,
         ));
+    }
 
-        List::new(lines)
+    lines.push(construct_detail_field(
+        "Last Change",
+        &format_current_date(account.last_change),
+        17,
+    ));
+    lines.push(construct_detail_field(
+        "Account Created",
+        &format_current_date(account.creation_date),
+        17,
+    ));
+
+    List::new(lines)
 }

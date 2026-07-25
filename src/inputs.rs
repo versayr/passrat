@@ -1,10 +1,16 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
-use ratatui::widgets::ListState;
 
 use crate::{
     app::{
-        App, EditState, HomeState, Mode::{self, Edit, Help, Home},
-    }, forms::Fields, modes::lock::LockAction::{self}, models::Service, modes::view::{AccountList, DetailList, Pane, View, ViewAction},
+        App, HomeState,
+        Mode::{self, Help, Home},
+    },
+    models::Service,
+    modes::{
+        edit::{Edit, EditAction},
+        lock::LockAction::{self},
+        view::{View, ViewAction},
+    },
 };
 
 impl App {
@@ -31,25 +37,26 @@ impl App {
                 if let Some(password) = password {
                     self.submit_password(&password);
                 }
-            },
+            }
             Mode::Home(_) => self.handle_home_inputs(event),
-            Mode::View(view) => {
-                match view.handle_inputs(event) {
-                    ViewAction::Edit(account) => {
-                        self.mode = Edit(EditState { list: account.fields(), state: ListState::default() });
-                    },
-                    ViewAction::Return => self.mode = Home(HomeState::default()),
-                    ViewAction::Help => self.mode = Help,
-                    ViewAction::Quit => self.exit = true,
-                    ViewAction::None => {},
-                }
+            Mode::View(view) => match view.handle_inputs(event) {
+                ViewAction::Edit(account) => self.mode = Mode::Edit(Edit::new(&account)),
+                ViewAction::Return => self.mode = Home(HomeState::default()),
+                ViewAction::Help => self.mode = Help,
+                ViewAction::Quit => self.exit = true,
+                ViewAction::None => {}
             },
-            Mode::Edit(_) => self.handle_edit_inputs(event),
+            Mode::Edit(edit) => match edit.handle_inputs(event) {
+                EditAction::Return => self.mode = Home(HomeState::default()),
+                EditAction::Quit => self.exit = true,
+                EditAction::Help => self.mode = Help,
+                EditAction::None => {}
+            },
             Mode::Help => self.handle_help_inputs(event),
             Mode::Cuts => self.handle_shortcut_inputs(event),
         }
     }
-    
+
     fn handle_home_inputs(&mut self, event: KeyEvent) {
         match event.code {
             KeyCode::Esc | KeyCode::Char('q') => self.exit = true,
@@ -57,28 +64,15 @@ impl App {
             KeyCode::Char('j') | KeyCode::Down => self.services.state.select_next(),
             KeyCode::Char('k') | KeyCode::Up => self.services.state.select_previous(),
             KeyCode::Char('e') => {
-                let service = self.services.list[self
+                let service = &self.services.list[self
                     .services
                     .state
                     .selected()
-                    .expect("No service is selected.")]
-                .clone();
-
-                let mut editstate = EditState {
-                    list: service.fields(),
-                    state: ListState::default(),
-                };
-                editstate.state.select_first();
-                self.mode = Mode::Edit(editstate);
+                    .expect("No service is selected.")];
+                self.mode = Mode::Edit(Edit::new(service));
             }
             KeyCode::Char('n') => {
-                let service = Service::default();
-                let mut editstate = EditState {
-                    list: service.fields(),
-                    state: ListState::default(),
-                };
-                editstate.state.select_first();
-                self.mode = Mode::Edit(editstate);
+                self.mode = Mode::Edit(Edit::new(&Service::default()));
             }
             KeyCode::Char('\\') => self.mode = Mode::Cuts,
             KeyCode::Enter => {
@@ -89,23 +83,8 @@ impl App {
                         .selected()
                         .expect("No service is selected.")]
                     .clone();
-
-                    self.mode = Mode::View(View {
-                        service: service.clone(),
-                        accounts: AccountList {
-                            list: self.get_accounts(service.id.unwrap()).unwrap(),
-                            state: ListState::default(),
-                        },
-                        details: DetailList {
-                            list: vec![],
-                            state: ListState::default(),
-                        },
-                        selected: Pane::Left,
-                    });
-
-                    if let Mode::View(state) = &mut self.mode {
-                        state.accounts.state.select_first();
-                    }
+                    let list = self.get_accounts(service.id.expect("Unable to get service's account list without a row id for the service.")).expect("Unable to get list of accounts.");
+                    self.mode = Mode::View(View::new(&service, list));
                 }
             }
             KeyCode::Char('y') => {
@@ -116,26 +95,6 @@ impl App {
                     .expect("No service is selected.")]
                 .clone();
                 self.clipboard.set_text(service.name).unwrap();
-            }
-            _ => {}
-        }
-    }
-
-    fn handle_edit_inputs(&mut self, event: KeyEvent) {
-        match event.code {
-            // consider setting this to return to previous mode instead
-            KeyCode::Char('q') => self.exit = true,
-            KeyCode::Char('h' | '?') => self.mode = Mode::Help,
-            KeyCode::Esc => self.mode = Mode::Home(HomeState::default()),
-            KeyCode::Char('j') | KeyCode::Down => {
-                if let Mode::Edit(state) = &mut self.mode {
-                    state.state.select_next();
-                }
-            }
-            KeyCode::Char('k') | KeyCode::Up => {
-                if let Mode::Edit(state) = &mut self.mode {
-                    state.state.select_previous();
-                }
             }
             _ => {}
         }
