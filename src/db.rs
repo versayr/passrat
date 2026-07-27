@@ -1,19 +1,23 @@
 use chrono::NaiveDate;
-use rusqlite::{Connection, Error, Row};
+use rusqlite::{Connection, Error, Row, fallible_iterator::FallibleIterator, params};
 use std::path::Path;
 use xdg::BaseDirectories;
 
-use crate::models::Account;
+use crate::{
+    app::{App, Mode},
+    models::{Account, SecurityQuestion, Service, Shortcut, Target},
+    modes::{home::Home, lock::Lock},
+};
 
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
-    let conn = Connection::open(path).expect("Vault not found.");
+    let conn = Connection::open(path)?;
     conn.pragma_update(None, "key", password)?;
-    match conn.query_row("SELECT COUNT(*) FROM services", [], |r| {
+
+    conn.query_row("SELECT COUNT(*) FROM services", [], |r| {
         r.get::<usize, i64>(0)
-    }) {
-        Ok(_) => Ok(conn),
-        Err(e) => Err(e),
-    }
+    })?;
+
+    Ok(conn)
 }
 
 pub fn init_database(password: &str) -> Result<(), Error> {
@@ -106,4 +110,249 @@ impl Account {
             passcode: row.get_unwrap("passcode"),
         }
     }
+}
+
+impl App {
+    pub fn submit_password(&mut self, password: &str) {
+        let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
+        path.create_data_directory("")
+            .expect("Failed to create data directory.");
+
+        if let Some(path) = path.find_data_file("vault.db") {
+            if let Ok(conn) = connect_database(&path, password) {
+                self.conn = Some(conn);
+                if let Ok(list) = self.get_services() {
+                    self.mode = Mode::Home(Home::new(list));
+                } else {
+                    self.mode = Mode::Lock(Lock::new(
+                        String::new(),
+                        "Login error - please try again".into(),
+                    ));
+                }
+            } else {
+                self.mode = Mode::Lock(Lock::new(
+                    String::new(),
+                    "Incorrect password - please try again.".into(),
+                ));
+                // TODO fix this hacky bs
+                self.should_clear = true;
+            }
+        } else {
+            let _ = init_database(password);
+            self.mode = Mode::Lock(Lock::new(
+                String::new(),
+                "Database created - please enter passphrase again.".into(),
+            ));
+        }
+    }
+
+    pub fn get_services(&mut self) -> Result<Vec<Service>, Error> {
+        let mut stmt = self
+            .conn
+            .as_mut()
+            .expect("Failed to connect to database.")
+            .prepare("SELECT id, name, url FROM services ORDER BY name")?;
+
+        let result = stmt
+            .query_map([], |row| {
+                Ok(Service {
+                    id: row.get(0).expect("Failed to get service id."),
+                    name: row.get(1).expect("Failed to get service name."),
+                    url: row.get(2).expect("Failed to get service url."),
+                })
+            })?
+            .collect::<Result<Vec<Service>, _>>()?;
+
+        Ok(result)
+    }
+
+    pub fn get_accounts(&mut self, service_id: u32) -> Result<Vec<Account>, Error> {
+        self.conn
+            .as_mut()
+            .expect("Failed to connect to database.")
+            .prepare(&format!(
+                "SELECT * FROM accounts WHERE service_id = {service_id} ORDER BY username"
+            ))
+            .expect("Failed to prepare statement.")
+            .query([])?
+            .map(|row| Ok(Account::from_row(row)))
+            .collect()
+    }
+
+    pub fn handle_target(&mut self, target: &Target) {
+        match &target {
+            Target::Service(service) => match service.id {
+                Some(_) => self.update_service(service),
+                None => self.add_service(service),
+            },
+            Target::Account(account) => match account.id {
+                Some(_) => self.update_account(account),
+                None => self.add_account(account),
+            },
+            Target::Shortcut(shortcut) => match shortcut.id {
+                Some(_) => self.update_shortcut(shortcut),
+                None => self.add_shortcut(shortcut),
+            },
+            Target::SecurityQuestion(sq) => match sq.id {
+                Some(_) => self.update_security_question(sq),
+                None => self.add_security_question(sq),
+            },
+        }
+    }
+
+    pub fn add_service(&mut self, service: &Service) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "INSERT INTO services (name, url) VALUES (?1, ?2)",
+            params![service.name, service.url],
+        );
+
+        self.get_services()
+            .expect("Failed to refresh service list.");
+    }
+
+    fn update_service(&mut self, service: &Service) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "UPDATE services SET name = ?1, url = ?2 WHERE id = ?3",
+            params![service.name, service.url, service.id],
+        );
+
+        self.get_services()
+            .expect("Failed to refresh service list.");
+    }
+    //
+    //     fn remove_service(&mut self) -> Result<(), Error> {
+    //
+    //     }
+
+    pub fn add_account(&mut self, account: &Account) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            r"
+            INSERT INTO accounts (
+                service_id,
+                username,
+                last_change,
+                creation_date,
+                email,
+                password,
+                access_token,
+                pin,
+                passcode)
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            ",
+            params![
+                account.service_id,
+                account.username,
+                account.last_change.format("%Y-%m-%d").to_string(),
+                account.creation_date.format("%Y-%m-%d").to_string(),
+                account.email,
+                account.password,
+                account.access_token,
+                account.pin,
+                account.passcode
+            ],
+        );
+    }
+
+    fn update_account(&mut self, account: &Account) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            r"
+            UPDATE accounts
+            SET
+                service_id = ?1,
+                username = ?2,
+                last_change = ?3,
+                creation_date = ?4,
+                email = ?5,
+                password = ?6,
+                access_token = ?7,
+                pin = ?8,
+                passcode = ?9
+            WHERE id = ?10
+            ",
+            params![
+                account.service_id,
+                account.username,
+                account.last_change.format("%Y-%m-%d").to_string(),
+                account.creation_date.format("%Y-%m-%d").to_string(),
+                account.email,
+                account.password,
+                account.access_token,
+                account.pin,
+                account.passcode,
+                account.id
+            ],
+        );
+    }
+
+    //     fn remove_account(&mut self) -> Result<(), Error> {
+    //
+    //     }
+
+    pub fn add_shortcut(&mut self, shortcut: &Shortcut) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "INSERT INTO shortcuts (account_id, field, sequence) VALUES (?1, ?2, ?3)",
+            params![shortcut.account_id, shortcut.field, shortcut.sequence],
+        );
+
+        //         self.get_shortcuts()
+        //             .expect("Failed to refresh shortcut list.");
+    }
+
+    fn update_shortcut(&mut self, shortcut: &Shortcut) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "UPDATE shortcuts SET sequence = ?1 WHERE id = ?3",
+            params![shortcut.sequence, shortcut.id],
+        );
+
+        //         self.get_shortcuts()
+        //             .expect("Failed to refresh shortcut list.");
+    }
+    //
+    //     fn remove_shortcut(&mut self) -> Result<(), Error> {
+    //
+    //     }
+
+    pub fn add_security_question(&mut self, security_question: &SecurityQuestion) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "INSERT INTO security_questions (question, answer) VALUES (?1, ?2)",
+            params![security_question.question, security_question.answer],
+        );
+
+        //         self.get_security_questions()
+        //             .expect("Failed to refresh security_question list.");
+    }
+
+    fn update_security_question(&mut self, security_question: &SecurityQuestion) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute(
+            "UPDATE security_questions SET sequence = ?1 WHERE id = ?3",
+            params![
+                security_question.question,
+                security_question.answer,
+                security_question.id
+            ],
+        );
+
+        //         self.get_security_questions()
+        //             .expect("Failed to refresh security_question list.");
+    }
+    //
+    //     fn remove_security_question(&mut self) -> Result<(), Error> {
+    //
+    //     }
 }

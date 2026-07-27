@@ -1,7 +1,7 @@
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Service {
     pub id: Option<u32>,
     pub name: String,
@@ -55,21 +55,11 @@ pub struct Field {
     pub value: String,
 }
 
-impl Default for Service {
-    fn default() -> Self {
+impl Account {
+    pub fn new(service_id: u32) -> Self {
         Self {
             id: None,
-            name: "Test".into(),
-            url: None,
-        }
-    }
-}
-
-impl Default for Account {
-    fn default() -> Self {
-        Self {
-            id: None,
-            service_id: 1,
+            service_id,
             username: None,
             last_change: Local::now().date_naive(),
             creation_date: Local::now().date_naive(),

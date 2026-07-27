@@ -8,9 +8,10 @@ mod inputs;
 mod models;
 mod ui;
 mod modes {
+    pub mod edit;
+    pub mod home;
     pub mod lock;
     pub mod view;
-    pub mod edit;
 }
 
 fn main() -> color_eyre::Result<()> {

@@ -1,18 +1,16 @@
 use arboard::Clipboard;
 use ratatui::{
+    DefaultTerminal, Frame,
     buffer::Buffer,
     layout::Rect,
     widgets::{ListState, Widget},
-    DefaultTerminal, Frame,
 };
-use rusqlite::{fallible_iterator::FallibleIterator, params, Connection, Error};
+use rusqlite::Connection;
 use std::io;
-use xdg::BaseDirectories;
 
 use crate::{
-    db::{connect_database, init_database},
-    models::{Account, Service},
-    modes::{edit::Edit, lock::Lock, view::View},
+    models::Service,
+    modes::{edit::Edit, home::Home, lock::Lock, view::View},
 };
 
 pub struct App {
@@ -21,21 +19,18 @@ pub struct App {
     pub conn: Option<Connection>,
     pub services: ServiceList,
     pub clipboard: Clipboard,
+    // TODO remove this hack
+    pub should_clear: bool,
 }
 
 #[derive(Debug)]
 pub enum Mode {
     Lock(Lock),
-    Home(HomeState),
+    Home(Home),
+    View(View),
+    Edit(Edit),
     Help,
     Cuts,
-    Edit(Edit),
-    View(View),
-}
-
-#[derive(Debug, Default)]
-pub struct HomeState {
-    pub filter: String,
 }
 
 #[derive(Debug, Default)]
@@ -52,13 +47,17 @@ impl App {
             conn: None,
             services: ServiceList::default(),
             clipboard: Clipboard::new().unwrap(),
+            should_clear: false,
         }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        terminal.draw(|frame| self.draw(frame))?;
-
         while !self.exit {
+            // TODO remove this hack
+            if self.should_clear {
+                terminal.clear()?;
+                self.should_clear = false;
+            }
             terminal.draw(|frame| self.draw(frame))?;
             self.handle_events();
         }
@@ -69,138 +68,6 @@ impl App {
     fn draw(&mut self, frame: &mut Frame) {
         frame.render_widget(self, frame.area());
     }
-
-    pub fn submit_password(&mut self, password: &str) {
-        let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
-        path.create_data_directory("")
-            .expect("Failed to create data directory.");
-
-        if let Some(path) = path.find_data_file("vault.db") {
-            if let Ok(conn) = connect_database(&path, password) {
-                self.conn = Some(conn);
-                self.get_services()
-                    .expect("Failed to get list of services.");
-                self.mode = Mode::Home(HomeState::default());
-                self.services.state.select(Some(0));
-            } else {
-                self.mode = Mode::Lock(Lock {
-                    input: String::new(),
-                    alert: "Incorrect password - please try again.".into(),
-                });
-            }
-        } else {
-            let _ = init_database(password);
-            self.mode = Mode::Lock(Lock {
-                input: String::new(),
-                alert: "Database created - please enter passphrase again.".into(),
-            });
-        }
-    }
-
-    pub fn get_services(&mut self) -> Result<(), Error> {
-        let mut stmt = self
-            .conn
-            .as_mut()
-            .expect("Failed to connect to database.")
-            .prepare("SELECT id, name, url FROM services ORDER BY name")?;
-
-        let result = stmt.query_map([], |row| {
-            Ok(Service {
-                id: row.get(0).expect("Failed to get service id."),
-                name: row.get(1).expect("Failed to get service name."),
-                url: row.get(2).expect("Failed to get service url."),
-            })
-        })?;
-
-        self.services.list.clear();
-
-        for service in result {
-            self.services.list.push(service?);
-        }
-
-        Ok(())
-    }
-
-    pub fn get_accounts(&mut self, service_id: u32) -> Result<Vec<Account>, Error> {
-        self
-            .conn
-            .as_mut()
-            .expect("Failed to connect to database.")
-            .prepare(&format!(
-                "SELECT * FROM accounts WHERE service_id = {service_id} ORDER BY username"
-            ))
-            .expect("Failed to prepare statement.")
-            .query([])?
-            .map(|row| Ok(Account::from_row(row))).collect()
-    }
-
-    pub fn add_service(&mut self) {
-        let service = Service::default();
-        let conn = self.conn.as_mut().expect("Failed to get connection.");
-
-        let _ = conn.execute(
-            "INSERT INTO services (name, url) VALUES (?1, ?2)",
-            params![service.name, service.url],
-        );
-
-        self.get_services()
-            .expect("Failed to refresh service list.");
-    }
-
-    //     fn update_service(&mut self) -> Result<(), Error> {
-    //
-    //     }
-    //
-    //     fn remove_service(&mut self) -> Result<(), Error> {
-    //
-    //     }
-
-    pub fn add_account(&mut self) {
-        let account = Account::default();
-        let conn = self.conn.as_mut().expect("Failed to get connection.");
-
-        let _ = conn.execute(
-            "INSERT INTO accounts (
-                service_id,
-                username,
-                last_change,
-                creation_date,
-                email,
-                password,
-                access_token,
-                pin,
-                passcode) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-            params![
-                &self.services.list[self
-                    .services
-                    .state
-                    .selected()
-                    .expect("No selected service.")]
-                .id,
-                account.username,
-                account.last_change.format("%Y-%m-%d").to_string(),
-                account.creation_date.format("%Y-%m-%d").to_string(),
-                account.email,
-                account.password,
-                account.access_token,
-                account.pin,
-                account.passcode
-            ],
-        );
-
-        // TODO
-        // refresh Mode::View account list after adding a new account?
-        // self.get_accounts()
-        //     .expect("Failed to refresh accounts list.");
-    }
-
-    //     fn update_account(&mut self) -> Result<(), Error> {
-    //
-    //     }
-    //
-    //     fn remove_account(&mut self) -> Result<(), Error> {
-    //
-    //     }
 }
 
 impl Widget for &mut App {
@@ -210,11 +77,11 @@ impl Widget for &mut App {
     {
         match &mut self.mode {
             Mode::Lock(lock) => lock.render(area, buf),
-            Mode::Home(_) => self.render_home_mode(area, buf),
-            Mode::Help => self.render_help_mode(area, buf),
-            Mode::Cuts => self.render_shortcut_mode(area, buf),
             Mode::Edit(edit) => edit.render(area, buf),
             Mode::View(view) => view.render(area, buf),
+            Mode::Home(home) => home.render(area, buf),
+            Mode::Help => self.render_help_mode(area, buf),
+            Mode::Cuts => self.render_shortcut_mode(area, buf),
         }
     }
 }

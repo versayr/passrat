@@ -38,6 +38,9 @@ pub struct DetailList {
 #[derive(Debug)]
 pub enum ViewAction {
     Edit(Account),
+    // Delete(Account),
+    // Paste(String),
+    Copy(String),
     Return,
     Help,
     Quit,
@@ -65,15 +68,22 @@ impl View {
                 ViewAction::None
             }
             KeyCode::Char('e') => {
-                let account = &self.accounts.list[self
-                    .accounts
-                    .state
-                    .selected()
-                    .expect("No account is selected.")];
+                if self.accounts.state.selected().is_none() {
+                    ViewAction::None
+                } else {
+                    let account = &self.accounts.list[self
+                        .accounts
+                        .state
+                        .selected()
+                        .expect("No account is selected.")];
 
-                ViewAction::Edit(account.clone())
+                    ViewAction::Edit(account.clone())
+                }
             }
-            KeyCode::Char('n') => ViewAction::Edit(Account::default()),
+            KeyCode::Char('n') => {
+                let id = self.service.id.expect("No service id found");
+                ViewAction::Edit(Account::new(id))
+            }
             _ => ViewAction::None,
         }
     }

@@ -10,17 +10,20 @@ use ratatui::{
     },
 };
 
-use crate::forms::Fields;
-use crate::models::Field;
+use crate::models::{Field, Target};
 
 #[derive(Debug)]
 pub struct Edit {
+    pub target: Target,
     pub list: Vec<Field>,
     pub state: ListState,
 }
 
 #[derive(Debug)]
 pub enum EditAction {
+    Submit(Target),
+    // Copy(String),
+    // Paste(String),
     Return,
     Help,
     Quit,
@@ -40,15 +43,19 @@ impl Edit {
                 self.state.select_previous();
                 EditAction::None
             }
+            KeyCode::Enter => EditAction::Submit(self.target.clone()),
             _ => EditAction::None,
         }
     }
 
-    pub fn new<T: Fields>(item: &T) -> Edit {
-        let list = item.fields();
+    pub fn new(target: Target, list: Vec<Field>) -> Edit {
         let mut state = ListState::default();
         state.select_first();
-        Edit { list, state }
+        Edit {
+            target,
+            list,
+            state,
+        }
     }
 }
 
