@@ -21,8 +21,8 @@ pub enum LockAction {
 }
 
 impl Lock {
-    pub fn new(input: String, alert: String) -> Lock {
-        Lock { input, alert }
+    pub const fn new(input: String, alert: String) -> Self {
+        Self { input, alert }
     }
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> LockAction {

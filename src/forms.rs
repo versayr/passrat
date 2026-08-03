@@ -1,4 +1,7 @@
-use crate::models::{Account, Field, SecurityQuestion, Service, Shortcut};
+use crate::models::{
+    Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
+};
+use std::clone::Clone;
 
 pub trait Fields {
     fn fields(&self) -> Vec<Field>;
@@ -13,11 +16,7 @@ impl Fields for Service {
             },
             Field {
                 label: "URL".to_string(),
-                value: if let Some(url) = &self.url {
-                    url.clone()
-                } else {
-                    String::new()
-                },
+                value: self.url.as_ref().map_or_else(String::new, Clone::clone),
             },
         ]
     }
@@ -25,14 +24,21 @@ impl Fields for Service {
 
 impl Fields for Account {
     fn fields(&self) -> Vec<Field> {
+        let contact: &ContactInfo = &self.contact;
+        let (email, username) = match contact {
+            ContactInfo::Both(email, name) => (email, name),
+            ContactInfo::Email(email) => (email, &Username::from(String::new())),
+            ContactInfo::Username(name) => (&EmailAddress::from(String::new()), name),
+        };
+
         vec![
             Field {
                 label: "Username".to_string(),
-                value: self.username.clone().unwrap_or_default(),
+                value: String::from(username),
             },
             Field {
                 label: "Email".to_string(),
-                value: self.email.clone(),
+                value: String::from(email),
             },
             Field {
                 label: "Password".to_string(),
@@ -44,19 +50,15 @@ impl Fields for Account {
             },
             Field {
                 label: "PIN".to_string(),
-                value: if let Some(pin) = self.pin {
-                    pin.clone().to_string()
-                } else {
-                    String::new()
-                },
+                value: self
+                    .pin
+                    .map_or_else(String::new, |pin| pin.clone().to_string()),
             },
             Field {
                 label: "Passcode".to_string(),
-                value: if let Some(passcode) = self.passcode {
-                    passcode.clone().to_string()
-                } else {
-                    String::new()
-                },
+                value: self
+                    .passcode
+                    .map_or_else(String::new, |passcode| passcode.clone().to_string()),
             },
             Field {
                 label: "Last Change".to_string(),

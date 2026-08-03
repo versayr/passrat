@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{ListState, Widget},
 };
 use rusqlite::Connection;
-use std::io;
+use std::io::{self};
 
 use crate::{
     models::Service,
@@ -40,15 +40,15 @@ pub struct ServiceList {
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self {
+    pub fn new() -> Result<Self, arboard::Error> {
+        Ok(Self {
             exit: false,
             mode: Mode::Lock(Lock::default()),
             conn: None,
             services: ServiceList::default(),
-            clipboard: Clipboard::new().unwrap(),
+            clipboard: Clipboard::new()?,
             should_clear: false,
-        }
+        })
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {

@@ -48,10 +48,10 @@ impl Edit {
         }
     }
 
-    pub fn new(target: Target, list: Vec<Field>) -> Edit {
+    pub fn new(target: Target, list: Vec<Field>) -> Self {
         let mut state = ListState::default();
         state.select_first();
-        Edit {
+        Self {
             target,
             list,
             state,

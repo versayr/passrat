@@ -2,7 +2,7 @@ use chrono::{Datelike, NaiveDate};
 use ordinal::ToOrdinal;
 use ratatui::{text::Line, widgets::List};
 
-use crate::models::Account;
+use crate::models::{Account, ContactInfo};
 
 pub fn format_current_date(date: NaiveDate) -> String {
     format!(
@@ -24,12 +24,23 @@ pub fn construct_detail_field(label: &str, value: &str, width: usize) -> Line<'s
 pub fn construct_detail_list(account: &Account) -> List<'_> {
     let mut lines = vec![];
 
-    if let Some(username) = &account.username {
-        lines.push(construct_detail_field("Username", username, 17));
+    let contact: &ContactInfo = &account.contact;
+    let (email, username) = match contact {
+        ContactInfo::Both(email, name) => (Some(email), Some(name)),
+        ContactInfo::Email(email) => (Some(email), None),
+        ContactInfo::Username(name) => (None, Some(name)),
+    };
+
+    if let Some(username) = username {
+        lines.push(construct_detail_field(
+            "Username",
+            &String::from(username),
+            17,
+        ));
     }
 
-    if !account.email.is_empty() {
-        lines.push(construct_detail_field("Email", &account.email, 17));
+    if let Some(email) = email {
+        lines.push(construct_detail_field("Email", &String::from(email), 17));
     }
 
     if !account.password.is_empty() {

@@ -5,7 +5,7 @@ use xdg::BaseDirectories;
 
 use crate::{
     app::{App, Mode},
-    models::{Account, SecurityQuestion, Service, Shortcut, Target},
+    models::{Account, ContactInfo, SecurityQuestion, Service, Shortcut, Target, EmailAddress, Username},
     modes::{home::Home, lock::Lock},
 };
 
@@ -80,26 +80,28 @@ pub fn init_database(password: &str) -> Result<(), Error> {
 }
 
 impl Account {
-    pub fn from_row(row: &Row<'_>) -> Account {
+    pub fn from_row(row: &Row<'_>) -> Self {
         let last_change_string: String = row
             .get("last_change")
             .expect("Failed to get last change date.");
         let creation_date_string: String = row
             .get("creation_date")
             .expect("Failed to get last change date.");
+        let email: Option<String> = row.get("email").expect("Failed to get email.");
         let username: Option<String> = row.get("username").expect("Failed to get username.");
 
         let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
         let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")
             .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
+        let email = email.and_then(|s| (!s.is_empty()).then_some(s));
         let username = username.and_then(|s| (!s.is_empty()).then_some(s));
+        let contact = ContactInfo::from_options(email, username);
 
-        Account {
+        Self {
             id: row.get("id").expect("Failed to get row id."),
             service_id: row.get("service_id").expect("Failed to get service id."),
-            username,
-            email: row.get("email").expect("Failed to get email."),
+            contact,
             password: row.get("password").expect("Failed to get password."),
             access_token: row
                 .get("access_token")
@@ -230,6 +232,12 @@ impl App {
 
     pub fn add_account(&mut self, account: &Account) {
         let conn = self.conn.as_mut().expect("Failed to get connection.");
+        let contact = &account.contact;
+        let (username, email) = match contact {
+            ContactInfo::Both(email, username) => (username, email),
+            ContactInfo::Email(email) => (&Username(String::new()), email), 
+            ContactInfo::Username(username) => (username, &EmailAddress(String::new()))
+        };
 
         let _ = conn.execute(
             r"
@@ -247,10 +255,10 @@ impl App {
             ",
             params![
                 account.service_id,
-                account.username,
+                username,
                 account.last_change.format("%Y-%m-%d").to_string(),
                 account.creation_date.format("%Y-%m-%d").to_string(),
-                account.email,
+                email,
                 account.password,
                 account.access_token,
                 account.pin,
@@ -261,6 +269,12 @@ impl App {
 
     fn update_account(&mut self, account: &Account) {
         let conn = self.conn.as_mut().expect("Failed to get connection.");
+        let contact = &account.contact;
+        let (username, email) = match contact {
+            ContactInfo::Both(email, username) => (username, email),
+            ContactInfo::Email(email) => (&Username(String::new()), email), 
+            ContactInfo::Username(username) => (username, &EmailAddress(String::new()))
+        };
 
         let _ = conn.execute(
             r"
@@ -279,10 +293,10 @@ impl App {
             ",
             params![
                 account.service_id,
-                account.username,
+                username,
                 account.last_change.format("%Y-%m-%d").to_string(),
                 account.creation_date.format("%Y-%m-%d").to_string(),
-                account.email,
+                email,
                 account.password,
                 account.access_token,
                 account.pin,

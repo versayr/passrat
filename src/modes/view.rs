@@ -12,7 +12,7 @@ use ratatui::{
 
 use crate::{
     helpers::construct_detail_list,
-    models::{Account, Field, Service},
+    models::{Account, ContactInfo, Field, Service},
 };
 
 #[derive(Debug, Default)]
@@ -71,12 +71,16 @@ impl View {
                 if self.accounts.state.selected().is_none() {
                     ViewAction::None
                 } else {
-                    let account = &self.accounts.list[self
+                    let selected = self
                         .accounts
                         .state
                         .selected()
-                        .expect("No account is selected.")];
-
+                        .expect("No account is selected.");
+                    let account = self
+                        .accounts
+                        .list
+                        .get(selected)
+                        .expect("Index is out of range.");
                     ViewAction::Edit(account.clone())
                 }
             }
@@ -88,7 +92,7 @@ impl View {
         }
     }
 
-    pub fn new(service: &Service, list: Vec<Account>) -> View {
+    pub fn new(service: &Service, list: Vec<Account>) -> Self {
         let mut accounts = AccountList {
             list,
             state: ListState::default(),
@@ -96,7 +100,7 @@ impl View {
 
         accounts.state.select_first();
 
-        View {
+        Self {
             service: service.clone(),
             accounts,
             details: DetailList::default(),
@@ -104,7 +108,7 @@ impl View {
         }
     }
 
-    fn render_service_details(&mut self, area: Rect, buf: &mut Buffer) {
+    fn render_service_details(&self, area: Rect, buf: &mut Buffer) {
         let name = &self.service.name;
         let url = self.service.url.as_deref().unwrap_or("");
 
@@ -135,9 +139,13 @@ impl View {
             .list
             .iter()
             .map(|account| {
-                ListItem::new(Line::from(
-                    account.username.clone().unwrap_or(account.email.clone()),
-                ))
+                let text = match &account.contact {
+                    ContactInfo::Both(_, username) | ContactInfo::Username(username) => {
+                        String::from(username)
+                    }
+                    ContactInfo::Email(email) => String::from(email),
+                };
+                ListItem::new(Line::from(text))
             })
             .collect();
 
@@ -160,7 +168,11 @@ impl View {
             .state
             .selected()
             .expect("No account is selected.");
-        let account = &self.accounts.list[selected_idx];
+        let account = self
+            .accounts
+            .list
+            .get(selected_idx)
+            .expect("Index out of range.");
 
         let block = Block::bordered()
             .border_type(BorderType::Double)
@@ -189,17 +201,23 @@ impl Widget for &mut View {
             .constraints(vec![Constraint::Length(4), Constraint::Fill(1)])
             .split(Block::inner(&block, area));
 
+        let header = main_layout.first().expect("Malformed main layout.");
+        let body = main_layout.get(1).expect("Malformed main layout.");
+
         let body_layout = Layout::default()
             .direction(Direction::Horizontal)
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
-            .split(main_layout[1]);
+            .split(*body);
 
-        self.render_service_details(main_layout[0], buf);
-        self.render_account_list(body_layout[0], buf);
+        let account_pane = body_layout.first().expect("Malformed body layout.");
+        let details_pane = body_layout.get(1).expect("Malformed body layout.");
+
+        self.render_service_details(*header, buf);
+        self.render_account_list(*account_pane, buf);
         if self.accounts.list.is_empty() {
-            render_empty_accounts_alert(body_layout[1], buf);
+            render_empty_accounts_alert(*details_pane, buf);
         } else {
-            self.render_account_details(body_layout[1], buf);
+            self.render_account_details(*details_pane, buf);
         }
 
         block.render(area, buf);

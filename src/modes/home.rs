@@ -49,49 +49,72 @@ impl Home {
                 HomeAction::None
             }
             KeyCode::Char('e') => {
-                let service = &self.services.list[self
-                    .services
-                    .state
-                    .selected()
-                    .expect("No service is selected.")];
-                HomeAction::Edit(service.clone())
+                if self.services.list.is_empty() {
+                    HomeAction::None
+                } else {
+                    let selected = self
+                        .services
+                        .state
+                        .selected()
+                        .expect("No service is selected.");
+                    let service = self
+                        .services
+                        .list
+                        .get(selected)
+                        .expect("Index not found in list.");
+                    HomeAction::Edit(service.clone())
+                }
             }
             KeyCode::Char('n') => {
                 let service = Service::default();
-                HomeAction::Edit(service.clone())
+                HomeAction::Edit(service)
             }
             // KeyCode::Char('\\') => self.mode = Mode::Cuts,
             KeyCode::Enter => {
                 if self.services.list.is_empty() {
                     HomeAction::None
                 } else {
-                    let service = &self.services.list[self
+                    let selected = self
                         .services
                         .state
                         .selected()
-                        .expect("No service is selected.")];
+                        .expect("No service is selected.");
+                    let service = self
+                        .services
+                        .list
+                        .get(selected)
+                        .expect("Index not found in list");
                     HomeAction::View(service.clone())
                 }
             }
             KeyCode::Char('y') => {
-                let service = &self.services.list[self
-                    .services
-                    .state
-                    .selected()
-                    .expect("No service is selected.")];
-                HomeAction::Copy(service.name.clone())
+                if self.services.list.is_empty() {
+                    HomeAction::None
+                } else {
+                    let selected = self
+                        .services
+                        .state
+                        .selected()
+                        .expect("No service is selected.");
+                    let service = self
+                        .services
+                        .list
+                        .get(selected)
+                        .expect("Index not found in list.");
+                    HomeAction::Copy(service.name.clone())
+                }
             }
             _ => HomeAction::None,
         }
     }
 
-    pub fn new(list: Vec<Service>) -> Home {
+    pub fn new(list: Vec<Service>) -> Self {
         let mut services = ServiceList {
             list,
             state: ListState::default(),
         };
         services.state.select_first();
-        Home {
+        Self {
             filter: String::new(),
             services,
         }

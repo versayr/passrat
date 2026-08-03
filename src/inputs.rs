@@ -52,7 +52,9 @@ impl App {
                     ));
                 }
                 HomeAction::Copy(str) => {
-                    self.clipboard.set_text(str).unwrap();
+                    self.clipboard
+                        .set_text(str)
+                        .expect("Failed to copy to system clipboard.");
                 }
                 HomeAction::Quit => self.exit = true,
                 HomeAction::Help => self.mode = Mode::Help,
@@ -69,7 +71,10 @@ impl App {
                     let list = self.get_services().expect("Failed to get services.");
                     self.mode = Mode::Home(Home::new(list));
                 }
-                ViewAction::Copy(str) => self.clipboard.set_text(str).unwrap(),
+                ViewAction::Copy(str) => self
+                    .clipboard
+                    .set_text(str)
+                    .expect("Failed to copy to system clipboard."),
                 ViewAction::Help => self.mode = Help,
                 ViewAction::Quit => self.exit = true,
                 ViewAction::None => {}

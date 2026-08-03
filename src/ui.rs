@@ -9,7 +9,7 @@ use crate::App;
 
 impl App {
     #[allow(clippy::unused_self)]
-    pub fn render_help_mode(&mut self, area: Rect, buf: &mut Buffer) {
+    pub fn render_help_mode(&self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Help Mode ");
         let block = Block::bordered()
             .title(title)
@@ -19,7 +19,7 @@ impl App {
     }
 
     #[allow(clippy::unused_self)]
-    pub fn render_shortcut_mode(&mut self, area: Rect, buf: &mut Buffer) {
+    pub fn render_shortcut_mode(&self, area: Rect, buf: &mut Buffer) {
         let title = Line::from(" Shortcut Mode ");
         let block = Block::bordered()
             .title(title)
