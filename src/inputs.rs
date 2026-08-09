@@ -91,64 +91,29 @@ impl App {
                     // TODO perhaps confirm/discard here?
                     self.handle_target(&target);
                     // TODO send to previous mode (store on app? Option<Mode> ?)
-                    let list = self.get_services().expect("Failed to get services.");
-                    self.mode = Mode::Home(Home::new(list));
+                    match target {
+                        Target::Shortcut(_) | Target::SecurityQuestion(_) => {
+                            let list = self.get_services().expect("Failed to get services.");
+                            self.mode = Mode::Home(Home::new(list));
+                        }
+                        Target::Service(service) => {
+                            let service_id = service.id.expect("Malformed service info - missing id.");
+                            let list = self.get_accounts(service_id).expect("Failed to get accounts.");
+                            self.mode = Mode::View(View::new(&service, list));
+                        }
+                        Target::Account(account) => {
+                            let service_id = account.service_id;
+                            let list = self.get_accounts(service_id).expect("Failed to get accounts.");
+                            let service = self.get_service(service_id).expect("Failed to get service.");
+                            self.mode = Mode::View(View::new(&service, list));
+                        },
+                    }
                 }
             },
             Mode::Help => self.handle_help_inputs(event),
             Mode::Cuts => self.handle_shortcut_inputs(event),
         }
     }
-
-    //     fn handle_home_inputs(&mut self, event: KeyEvent) {
-    //         match event.code {
-    //             KeyCode::Esc | KeyCode::Char('q') => self.exit = true,
-    //             KeyCode::Char('h' | '?') => self.mode = Mode::Help,
-    //             KeyCode::Char('j') | KeyCode::Down => self.services.state.select_next(),
-    //             KeyCode::Char('k') | KeyCode::Up => self.services.state.select_previous(),
-    //             KeyCode::Char('e') => {
-    //                 let service = &self.services.list[self
-    //                     .services
-    //                     .state
-    //                     .selected()
-    //                     .expect("No service is selected.")];
-    //                 self.mode = Mode::Edit(Edit::new(
-    //                     Target::Service(service.clone()),
-    //                     service.fields(),
-    //                 ));
-    //             }
-    //             KeyCode::Char('n') => {
-    //                 let service = Service::default();
-    //                 self.mode = Mode::Edit(Edit::new(
-    //                     Target::Service(service.clone()),
-    //                     service.fields(),
-    //                 ));
-    //             }
-    //             KeyCode::Char('\\') => self.mode = Mode::Cuts,
-    //             KeyCode::Enter => {
-    //                 if !self.services.list.is_empty() {
-    //                     let service = self.services.list[self
-    //                         .services
-    //                         .state
-    //                         .selected()
-    //                         .expect("No service is selected.")]
-    //                     .clone();
-    //                     let list = self.get_accounts(service.id.expect("Unable to get service's account list without a row id for the service.")).expect("Unable to get list of accounts.");
-    //                     self.mode = Mode::View(View::new(&service, list));
-    //                 }
-    //             }
-    //             KeyCode::Char('y') => {
-    //                 let service = self.services.list[self
-    //                     .services
-    //                     .state
-    //                     .selected()
-    //                     .expect("No service is selected.")]
-    //                 .clone();
-    //                 self.clipboard.set_text(service.name).unwrap();
-    //             }
-    //             _ => {}
-    //         }
-    //     }
 
     fn handle_help_inputs(&mut self, event: KeyEvent) {
         match event.code {

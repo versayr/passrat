@@ -40,15 +40,15 @@ pub struct ServiceList {
 }
 
 impl App {
-    pub fn new() -> Result<Self, arboard::Error> {
-        Ok(Self {
+    pub fn new() -> Self {
+        Self {
             exit: false,
             mode: Mode::Lock(Lock::default()),
             conn: None,
             services: ServiceList::default(),
-            clipboard: Clipboard::new()?,
+            clipboard: Clipboard::new().expect("Clipboard failed to initialize."),
             should_clear: false,
-        })
+        }
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {

@@ -16,6 +16,7 @@ use crate::models::Service;
 pub struct Home {
     pub filter: String,
     pub services: ServiceList,
+    set_filter: bool
 }
 
 #[derive(Debug, Default)]
@@ -36,78 +37,6 @@ pub enum HomeAction {
 }
 
 impl Home {
-    pub fn handle_inputs(&mut self, event: KeyEvent) -> HomeAction {
-        match event.code {
-            KeyCode::Esc | KeyCode::Char('q') => HomeAction::Quit,
-            KeyCode::Char('h' | '?') => HomeAction::Help,
-            KeyCode::Char('j') | KeyCode::Down => {
-                self.services.state.select_next();
-                HomeAction::None
-            }
-            KeyCode::Char('k') | KeyCode::Up => {
-                self.services.state.select_previous();
-                HomeAction::None
-            }
-            KeyCode::Char('e') => {
-                if self.services.list.is_empty() {
-                    HomeAction::None
-                } else {
-                    let selected = self
-                        .services
-                        .state
-                        .selected()
-                        .expect("No service is selected.");
-                    let service = self
-                        .services
-                        .list
-                        .get(selected)
-                        .expect("Index not found in list.");
-                    HomeAction::Edit(service.clone())
-                }
-            }
-            KeyCode::Char('n') => {
-                let service = Service::default();
-                HomeAction::Edit(service)
-            }
-            // KeyCode::Char('\\') => self.mode = Mode::Cuts,
-            KeyCode::Enter => {
-                if self.services.list.is_empty() {
-                    HomeAction::None
-                } else {
-                    let selected = self
-                        .services
-                        .state
-                        .selected()
-                        .expect("No service is selected.");
-                    let service = self
-                        .services
-                        .list
-                        .get(selected)
-                        .expect("Index not found in list");
-                    HomeAction::View(service.clone())
-                }
-            }
-            KeyCode::Char('y') => {
-                if self.services.list.is_empty() {
-                    HomeAction::None
-                } else {
-                    let selected = self
-                        .services
-                        .state
-                        .selected()
-                        .expect("No service is selected.");
-                    let service = self
-                        .services
-                        .list
-                        .get(selected)
-                        .expect("Index not found in list.");
-                    HomeAction::Copy(service.name.clone())
-                }
-            }
-            _ => HomeAction::None,
-        }
-    }
-
     pub fn new(list: Vec<Service>) -> Self {
         let mut services = ServiceList {
             list,
@@ -117,6 +46,102 @@ impl Home {
         Self {
             filter: String::new(),
             services,
+            set_filter: false
+        }
+    }
+
+    pub fn handle_inputs(&mut self, event: KeyEvent) -> HomeAction {
+        if self.set_filter {
+            match event.code {
+                KeyCode::Esc => {
+                    self.filter = String::new();
+                    self.set_filter = false;
+                    HomeAction::None
+                }
+                KeyCode::Char(ch) => {
+                    self.filter.push(ch);
+                    HomeAction::None
+                }
+                KeyCode::Enter => {
+                    self.set_filter = false;
+                    HomeAction::None
+                }
+                _ => HomeAction::None
+            }
+        } else {
+            match event.code {
+                KeyCode::Esc | KeyCode::Char('q') => HomeAction::Quit,
+                KeyCode::Char('h' | '?') => HomeAction::Help,
+                KeyCode::Char('j') | KeyCode::Down => {
+                    self.services.state.select_next();
+                    HomeAction::None
+                }
+                KeyCode::Char('k') | KeyCode::Up => {
+                    self.services.state.select_previous();
+                    HomeAction::None
+                }
+                KeyCode::Char('e') => {
+                    if self.services.list.is_empty() {
+                        HomeAction::None
+                    } else {
+                        let selected = self
+                            .services
+                            .state
+                            .selected()
+                            .expect("No service is selected.");
+                        let service = self
+                            .services
+                            .list
+                            .get(selected)
+                            .expect("Index not found in list.");
+                        HomeAction::Edit(service.clone())
+                    }
+                }
+                KeyCode::Char('n') => {
+                    let service = Service::default();
+                    HomeAction::Edit(service)
+                }
+                // KeyCode::Char('\\') => self.mode = Mode::Cuts,
+                KeyCode::Char('/') => {
+                    self.set_filter = true;
+                    HomeAction::None
+                }
+                KeyCode::Enter => {
+                    if self.services.list.is_empty() {
+                        HomeAction::None
+                    } else {
+                        let selected = self
+                            .services
+                            .state
+                            .selected()
+                            .expect("No service is selected.");
+                        let service = self
+                            .services
+                            .list
+                            .get(selected)
+                            .expect("Index not found in list");
+                        HomeAction::View(service.clone())
+                    }
+                }
+                KeyCode::Char('y') => {
+                    if self.services.list.is_empty() {
+                        HomeAction::None
+                    } else {
+                        let selected = self
+                            .services
+                            .state
+                            .selected()
+                            .expect("No service is selected.");
+                        let service = self
+                            .services
+                            .list
+                            .get(selected)
+                            .expect("Index not found in list.");
+                        HomeAction::Copy(service.name.clone())
+                    }
+                }
+                _ => HomeAction::None,
+            }
         }
     }
 

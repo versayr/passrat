@@ -31,6 +31,16 @@ pub enum EditAction {
 }
 
 impl Edit {
+    pub fn new(target: Target, list: Vec<Field>) -> Self {
+        let mut state = ListState::default();
+        state.select_first();
+        Self {
+            target,
+            list,
+            state,
+        }
+    }
+
     pub fn handle_inputs(&mut self, event: KeyEvent) -> EditAction {
         match event.code {
             KeyCode::Char('h' | '?') => EditAction::Help,
@@ -45,16 +55,6 @@ impl Edit {
             }
             KeyCode::Enter => EditAction::Submit(self.target.clone()),
             _ => EditAction::None,
-        }
-    }
-
-    pub fn new(target: Target, list: Vec<Field>) -> Self {
-        let mut state = ListState::default();
-        state.select_first();
-        Self {
-            target,
-            list,
-            state,
         }
     }
 }

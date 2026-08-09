@@ -55,6 +55,22 @@ pub enum Pane {
 }
 
 impl View {
+    pub fn new(service: &Service, list: Vec<Account>) -> Self {
+        let mut accounts = AccountList {
+            list,
+            state: ListState::default(),
+        };
+
+        accounts.state.select_first();
+
+        Self {
+            service: service.clone(),
+            accounts,
+            details: DetailList::default(),
+            selected: Pane::Left,
+        }
+    }
+
     pub fn handle_inputs(&mut self, event: KeyEvent) -> ViewAction {
         match event.code {
             KeyCode::Char('q') | KeyCode::Esc => ViewAction::Return,
@@ -89,22 +105,6 @@ impl View {
                 ViewAction::Edit(Account::new(id))
             }
             _ => ViewAction::None,
-        }
-    }
-
-    pub fn new(service: &Service, list: Vec<Account>) -> Self {
-        let mut accounts = AccountList {
-            list,
-            state: ListState::default(),
-        };
-
-        accounts.state.select_first();
-
-        Self {
-            service: service.clone(),
-            accounts,
-            details: DetailList::default(),
-            selected: Pane::Left,
         }
     }
 

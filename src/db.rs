@@ -30,7 +30,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY,
-            name TEXT NOT NULL,
+            name TEXT NOT NULL UNIQUE,
             url TEXT
         )",
         [],
@@ -41,7 +41,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
         "CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
             service_id INTEGER NOT NULL,
-            username TEXT,
+            username TEXT UNIQUE,
             email TEXT,
             password TEXT, 
             access_token TEXT, 
@@ -58,7 +58,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
         "CREATE TABLE IF NOT EXISTS security_questions (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
-            question TEXT NOT NULL,
+            question TEXT NOT NULL UNIQUE,
             answer TEXT NOT NULL
         )",
         [],
@@ -69,14 +69,27 @@ pub fn init_database(password: &str) -> Result<(), Error> {
         "CREATE TABLE IF NOT EXISTS shortcuts (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
-            field TEXT NOT NULL,
-            sequence TEXT NOT NULL
+            field TEXT NOT NULL UNIQUE,
+            sequence TEXT NOT NULL UNIQUE
         )",
         [],
     )
     .expect("Failed to create security question table.");
 
     Ok(())
+}
+
+impl Service {
+    pub fn from_row(row: &Row<'_>) -> Self {
+        let url: Option<String> = row.get("url").expect("Failed to get url.");
+        let url = url.and_then(|s| (!s.is_empty()).then_some(s));
+
+        Self { 
+            id: row.get("id").expect("Failed to get row id."), 
+            name: row.get("name").expect("Failed to get row name."), 
+            url
+        }
+    }
 }
 
 impl Account {
@@ -200,6 +213,17 @@ impl App {
                 None => self.add_security_question(sq),
             },
         }
+    }
+
+    pub fn get_service(&mut self, id: u32) -> Result<Service, Error> {
+        self.conn
+            .as_mut()
+            .expect("Failed to connect to database.")
+            .prepare(&format!(
+                "SELECT * FROM services WHERE id = {id} LIMIT 1"
+            ))
+            .expect("Failed to prepare statement.")
+            .query_one([], |row| Ok(Service::from_row(row)))
     }
 
     pub fn add_service(&mut self, service: &Service) {
