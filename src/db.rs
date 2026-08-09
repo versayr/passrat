@@ -227,7 +227,7 @@ impl App {
     }
 
     pub fn add_service(&mut self, service: &Service) {
-        let conn = self.conn.as_mut().expect("Failed to get connection.");
+        let conn = self.conn.as_mut().expect("Failed to get database connection.");
 
         let _ = conn.execute(
             "INSERT INTO services (name, url) VALUES (?1, ?2)",
@@ -239,7 +239,7 @@ impl App {
     }
 
     fn update_service(&mut self, service: &Service) {
-        let conn = self.conn.as_mut().expect("Failed to get connection.");
+        let conn = self.conn.as_mut().expect("Failed to get database connection.");
 
         let _ = conn.execute(
             "UPDATE services SET name = ?1, url = ?2 WHERE id = ?3",
@@ -249,10 +249,13 @@ impl App {
         self.get_services()
             .expect("Failed to refresh service list.");
     }
-    //
-    //     fn remove_service(&mut self) -> Result<(), Error> {
-    //
-    //     }
+    
+    pub fn remove_service(&mut self, service: &Service) {
+        let conn = self.conn.as_mut().expect("Failed to get database connection.");
+
+        self.get_services()
+            .expect("Failed to refresh service list.");
+    }
 
     pub fn add_account(&mut self, account: &Account) {
         let conn = self.conn.as_mut().expect("Failed to get connection.");

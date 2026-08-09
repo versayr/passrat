@@ -58,6 +58,7 @@ impl App {
                 }
                 HomeAction::Quit => self.exit = true,
                 HomeAction::Help => self.mode = Mode::Help,
+                HomeAction::Delete(service) => self.remove_service(&service),
                 HomeAction::None => {}
             },
             Mode::View(view) => match view.handle_inputs(event) {

@@ -29,7 +29,7 @@ pub struct ServiceList {
 pub enum HomeAction {
     Edit(Service),
     View(Service),
-    // Delete(Service),
+    Delete(Service),
     Copy(String),
     Help,
     Quit,
@@ -52,26 +52,7 @@ impl Home {
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> HomeAction {
         if self.set_filter {
-            match event.code {
-                KeyCode::Esc => {
-                    self.filter = String::new();
-                    self.set_filter = false;
-                    HomeAction::None
-                }
-                KeyCode::Char(ch) => {
-                    self.filter.push(ch);
-                    HomeAction::None
-                }
-                KeyCode::Backspace => {
-                    self.filter.pop();
-                    HomeAction::None
-                }
-                KeyCode::Enter => {
-                    self.set_filter = false;
-                    HomeAction::None
-                }
-                _ => HomeAction::None,
-            }
+            self.handle_filter_inputs(event)
         } else {
             match event.code {
                 KeyCode::Esc => {
@@ -96,23 +77,11 @@ impl Home {
                     if self.services.list.is_empty() {
                         HomeAction::None
                     } else {
-                        let selected = self
-                            .services
-                            .state
-                            .selected()
-                            .expect("No service is selected.");
-                        let service = self
-                            .services
-                            .list
-                            .get(selected)
-                            .expect("Index not found in list.");
+                        let service = self.get_selected_service();
                         HomeAction::Edit(service.clone())
                     }
                 }
-                KeyCode::Char('n') => {
-                    let service = Service::default();
-                    HomeAction::Edit(service)
-                }
+                KeyCode::Char('n') => HomeAction::Edit(Service::default()),
                 // KeyCode::Char('\\') => self.mode = Mode::Cuts,
                 KeyCode::Char('/') => {
                     if !self.services.list.is_empty() {
@@ -124,16 +93,7 @@ impl Home {
                     if self.services.list.is_empty() {
                         HomeAction::None
                     } else {
-                        let selected = self
-                            .services
-                            .state
-                            .selected()
-                            .expect("No service is selected.");
-                        let service = self
-                            .services
-                            .list
-                            .get(selected)
-                            .expect("Index not found in list");
+                        let service = self.get_selected_service();
                         HomeAction::View(service.clone())
                     }
                 }
@@ -141,21 +101,35 @@ impl Home {
                     if self.services.list.is_empty() {
                         HomeAction::None
                     } else {
-                        let selected = self
-                            .services
-                            .state
-                            .selected()
-                            .expect("No service is selected.");
-                        let service = self
-                            .services
-                            .list
-                            .get(selected)
-                            .expect("Index not found in list.");
+                        let service = self.get_selected_service();
                         HomeAction::Copy(service.name.clone())
                     }
                 }
                 _ => HomeAction::None,
             }
+        }
+    }
+
+    fn handle_filter_inputs(&mut self, event: KeyEvent) -> HomeAction {
+        match event.code {
+            KeyCode::Esc => {
+                self.filter = String::new();
+                self.set_filter = false;
+                HomeAction::None
+            }
+            KeyCode::Char(ch) => {
+                self.filter.push(ch);
+                HomeAction::None
+            }
+            KeyCode::Backspace => {
+                self.filter.pop();
+                HomeAction::None
+            }
+            KeyCode::Enter => {
+                self.set_filter = false;
+                HomeAction::None
+            }
+            _ => HomeAction::None,
         }
     }
 
@@ -202,6 +176,24 @@ impl Home {
 
         Widget::render(line, area, buf);
         block.render(area, buf);
+    }
+
+    fn get_selected_service(&self) -> &Service {
+        let selected = self
+            .services
+            .state
+            .selected()
+            .expect("No service is selected.");
+        let filtered_list = self
+            .services
+            .list
+            .iter()
+            .filter(|s| s.name.to_lowercase().contains(&self.filter.to_lowercase()))
+            .collect::<Vec<_>>();
+
+        filtered_list
+            .get(selected)
+            .expect("Index not found in list")
     }
 }
 
