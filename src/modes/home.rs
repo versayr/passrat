@@ -1,12 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Constraint, Layout, Rect},
     style::{Modifier, Style},
-    text::Line,
+    text::{Line, Span},
     widgets::{
-        Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, StatefulWidget,
-        Widget,
+        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding,
+        StatefulWidget, Widget,
     },
 };
 
@@ -16,7 +16,7 @@ use crate::models::Service;
 pub struct Home {
     pub filter: String,
     pub services: ServiceList,
-    set_filter: bool
+    set_filter: bool,
 }
 
 #[derive(Debug, Default)]
@@ -46,7 +46,7 @@ impl Home {
         Self {
             filter: String::new(),
             services,
-            set_filter: false
+            set_filter: false,
         }
     }
 
@@ -62,15 +62,27 @@ impl Home {
                     self.filter.push(ch);
                     HomeAction::None
                 }
+                KeyCode::Backspace => {
+                    self.filter.pop();
+                    HomeAction::None
+                }
                 KeyCode::Enter => {
                     self.set_filter = false;
                     HomeAction::None
                 }
-                _ => HomeAction::None
+                _ => HomeAction::None,
             }
         } else {
             match event.code {
-                KeyCode::Esc | KeyCode::Char('q') => HomeAction::Quit,
+                KeyCode::Esc => {
+                    if self.filter.is_empty() {
+                        HomeAction::Quit
+                    } else {
+                        self.filter.clear();
+                        HomeAction::None
+                    }
+                }
+                KeyCode::Char('q') => HomeAction::Quit,
                 KeyCode::Char('h' | '?') => HomeAction::Help,
                 KeyCode::Char('j') | KeyCode::Down => {
                     self.services.state.select_next();
@@ -103,7 +115,9 @@ impl Home {
                 }
                 // KeyCode::Char('\\') => self.mode = Mode::Cuts,
                 KeyCode::Char('/') => {
-                    self.set_filter = true;
+                    if !self.services.list.is_empty() {
+                        self.set_filter = true;
+                    }
                     HomeAction::None
                 }
                 KeyCode::Enter => {
@@ -150,7 +164,12 @@ impl Home {
             .services
             .list
             .iter()
-            .filter(|service| service.name.contains(&self.filter))
+            .filter(|service| {
+                service
+                    .name
+                    .to_lowercase()
+                    .contains(&self.filter.to_lowercase())
+            })
             .map(|service| ListItem::new(Line::from(service.name.clone())))
             .collect();
 
@@ -162,6 +181,27 @@ impl Home {
                     .add_modifier(Modifier::REVERSED),
             )
             .highlight_spacing(HighlightSpacing::Always)
+    }
+
+    fn render_filter(&self, area: Rect, buf: &mut Buffer) {
+        let block = Block::bordered()
+            .border_type(BorderType::LightQuadrupleDashed)
+            .borders(Borders::BOTTOM);
+
+        let cursor_style = if self.set_filter {
+            Style::reversed(Style::default())
+        } else {
+            Style::default()
+        };
+
+        let line = Line::from(vec![
+            Span::raw("/: "),
+            Span::raw(self.filter.clone()),
+            Span::styled(" ", cursor_style),
+        ]);
+
+        Widget::render(line, area, buf);
+        block.render(area, buf);
     }
 }
 
@@ -185,20 +225,28 @@ impl Widget for &mut Home {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
+        let filter_height = match (self.set_filter, self.filter.is_empty()) {
+            (true, _) | (_, false) => 2,
+            (_, _) => 0,
+        };
+
+        let layout = Layout::default()
+            .constraints(vec![Constraint::Length(filter_height), Constraint::Fill(1)])
+            .split(Block::inner(&block, area));
+
+        let header = layout.first().expect("Malformed layout.");
+        let body = layout.get(1).expect("Malformed layout.");
+
+        match (self.set_filter, self.filter.is_empty()) {
+            (true, _) | (_, false) => self.render_filter(*header, buf),
+            _ => {}
+        }
+
         if self.services.list.is_empty() {
-            Widget::render(
-                construct_empty_services_alert(),
-                Block::inner(&block, area),
-                buf,
-            );
+            Widget::render(construct_empty_services_alert(), *body, buf);
         } else {
             let list = self.construct_service_list();
-            StatefulWidget::render(
-                list,
-                Block::inner(&block, area),
-                buf,
-                &mut self.services.state,
-            );
+            StatefulWidget::render(list, *body, buf, &mut self.services.state);
         }
 
         block.render(area, buf);

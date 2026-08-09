@@ -197,7 +197,7 @@ impl Widget for &mut View {
             .border_type(BorderType::Rounded);
 
         let main_layout = Layout::default()
-            .direction(Direction::Vertical)
+//             .direction(Direction::Vertical)
             .constraints(vec![Constraint::Length(4), Constraint::Fill(1)])
             .split(Block::inner(&block, area));
 

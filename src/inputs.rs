@@ -82,6 +82,7 @@ impl App {
             Mode::Edit(edit) => match edit.handle_inputs(event) {
                 EditAction::Return => {
                     let list = self.get_services().expect("Failed to get services.");
+                    // TODO if user was editing an account, return to view/service
                     self.mode = Mode::Home(Home::new(list));
                 }
                 EditAction::Quit => self.exit = true,
