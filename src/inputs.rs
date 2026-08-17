@@ -25,6 +25,7 @@ impl App {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn handle_key_events(&mut self, event: KeyEvent) {
         match &mut self.mode {
             Mode::Lock(lock) => {
@@ -58,7 +59,13 @@ impl App {
                 }
                 HomeAction::Quit => self.exit = true,
                 HomeAction::Help => self.mode = Mode::Help,
-                HomeAction::Delete(service) => self.remove_service(&service),
+                HomeAction::Delete(service) => {
+                    self.remove_service(&service);
+                    let list = self
+                        .get_services()
+                        .expect("Failed to refresh service list.");
+                    self.mode = Mode::Home(Home::new(list));
+                }
                 HomeAction::None => {}
             },
             Mode::View(view) => match view.handle_inputs(event) {
@@ -78,6 +85,14 @@ impl App {
                     .expect("Failed to copy to system clipboard."),
                 ViewAction::Help => self.mode = Help,
                 ViewAction::Quit => self.exit = true,
+                ViewAction::Delete(account) => {
+                    self.remove_account(&account);
+                    let service = self
+                        .get_service(account.service_id)
+                        .expect("Failed to get service.");
+                    let list = self.get_accounts(service.id.expect("Unable to get service's account list without a row id for the service.")).expect("Unable to get list of accounts.");
+                    self.mode = Mode::View(View::new(&service, list));
+                }
                 ViewAction::None => {}
             },
             Mode::Edit(edit) => match edit.handle_inputs(event) {
@@ -99,16 +114,23 @@ impl App {
                             self.mode = Mode::Home(Home::new(list));
                         }
                         Target::Service(service) => {
-                            let service_id = service.id.expect("Malformed service info - missing id.");
-                            let list = self.get_accounts(service_id).expect("Failed to get accounts.");
+                            let service_id =
+                                service.id.expect("Malformed service info - missing id.");
+                            let list = self
+                                .get_accounts(service_id)
+                                .expect("Failed to get accounts.");
                             self.mode = Mode::View(View::new(&service, list));
                         }
                         Target::Account(account) => {
                             let service_id = account.service_id;
-                            let list = self.get_accounts(service_id).expect("Failed to get accounts.");
-                            let service = self.get_service(service_id).expect("Failed to get service.");
+                            let list = self
+                                .get_accounts(service_id)
+                                .expect("Failed to get accounts.");
+                            let service = self
+                                .get_service(service_id)
+                                .expect("Failed to get service.");
                             self.mode = Mode::View(View::new(&service, list));
-                        },
+                        }
                     }
                 }
             },

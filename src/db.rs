@@ -5,7 +5,9 @@ use xdg::BaseDirectories;
 
 use crate::{
     app::{App, Mode},
-    models::{Account, ContactInfo, SecurityQuestion, Service, Shortcut, Target, EmailAddress, Username},
+    models::{
+        Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username,
+    },
     modes::{home::Home, lock::Lock},
 };
 
@@ -84,10 +86,10 @@ impl Service {
         let url: Option<String> = row.get("url").expect("Failed to get url.");
         let url = url.and_then(|s| (!s.is_empty()).then_some(s));
 
-        Self { 
-            id: row.get("id").expect("Failed to get row id."), 
-            name: row.get("name").expect("Failed to get row name."), 
-            url
+        Self {
+            id: row.get("id").expect("Failed to get row id."),
+            name: row.get("name").expect("Failed to get row name."),
+            url,
         }
     }
 }
@@ -197,7 +199,13 @@ impl App {
     pub fn handle_target(&mut self, target: &Target) {
         match &target {
             Target::Service(service) => match service.id {
-                Some(_) => self.update_service(service),
+                Some(_) => {
+                    self.update_service(service);
+                    let list = self
+                        .get_services()
+                        .expect("Failed to refresh service list.");
+                    self.mode = Mode::Home(Home::new(list));
+                }
                 None => self.add_service(service),
             },
             Target::Account(account) => match account.id {
@@ -219,15 +227,16 @@ impl App {
         self.conn
             .as_mut()
             .expect("Failed to connect to database.")
-            .prepare(&format!(
-                "SELECT * FROM services WHERE id = {id} LIMIT 1"
-            ))
+            .prepare(&format!("SELECT * FROM services WHERE id = {id} LIMIT 1"))
             .expect("Failed to prepare statement.")
             .query_one([], |row| Ok(Service::from_row(row)))
     }
 
     pub fn add_service(&mut self, service: &Service) {
-        let conn = self.conn.as_mut().expect("Failed to get database connection.");
+        let conn = self
+            .conn
+            .as_mut()
+            .expect("Failed to get database connection.");
 
         let _ = conn.execute(
             "INSERT INTO services (name, url) VALUES (?1, ?2)",
@@ -239,22 +248,33 @@ impl App {
     }
 
     fn update_service(&mut self, service: &Service) {
-        let conn = self.conn.as_mut().expect("Failed to get database connection.");
+        let conn = self
+            .conn
+            .as_mut()
+            .expect("Failed to get database connection.");
 
         let _ = conn.execute(
             "UPDATE services SET name = ?1, url = ?2 WHERE id = ?3",
             params![service.name, service.url, service.id],
         );
-
-        self.get_services()
-            .expect("Failed to refresh service list.");
     }
-    
-    pub fn remove_service(&mut self, service: &Service) {
-        let conn = self.conn.as_mut().expect("Failed to get database connection.");
 
-        self.get_services()
-            .expect("Failed to refresh service list.");
+    pub fn remove_service(&mut self, service: &Service) {
+        let conn = self
+            .conn
+            .as_mut()
+            .expect("Failed to get database connection.");
+
+        let tx = conn
+            .transaction()
+            .expect("Failed to initialize database transaction.");
+
+        tx.execute("DELETE FROM accounts WHERE service_id = ?1", [&service.id])
+            .expect("Failed to delete accounts of this service.");
+        tx.execute("DELETE FROM services WHERE id = ?1", [&service.id])
+            .expect("Failed to delete this service.");
+
+        tx.commit().expect("Failed to commit database transaction.");
     }
 
     pub fn add_account(&mut self, account: &Account) {
@@ -262,8 +282,8 @@ impl App {
         let contact = &account.contact;
         let (username, email) = match contact {
             ContactInfo::Both(email, username) => (username, email),
-            ContactInfo::Email(email) => (&Username(String::new()), email), 
-            ContactInfo::Username(username) => (username, &EmailAddress(String::new()))
+            ContactInfo::Email(email) => (&Username(String::new()), email),
+            ContactInfo::Username(username) => (username, &EmailAddress(String::new())),
         };
 
         let _ = conn.execute(
@@ -299,8 +319,8 @@ impl App {
         let contact = &account.contact;
         let (username, email) = match contact {
             ContactInfo::Both(email, username) => (username, email),
-            ContactInfo::Email(email) => (&Username(String::new()), email), 
-            ContactInfo::Username(username) => (username, &EmailAddress(String::new()))
+            ContactInfo::Email(email) => (&Username(String::new()), email),
+            ContactInfo::Username(username) => (username, &EmailAddress(String::new())),
         };
 
         let _ = conn.execute(
@@ -333,9 +353,11 @@ impl App {
         );
     }
 
-    //     fn remove_account(&mut self) -> Result<(), Error> {
-    //
-    //     }
+    pub fn remove_account(&mut self, account: &Account) {
+        let conn = self.conn.as_mut().expect("Failed to get connection.");
+
+        let _ = conn.execute("DELETE FROM accounts WHERE id = ?1", [account.id]);
+    }
 
     pub fn add_shortcut(&mut self, shortcut: &Shortcut) {
         let conn = self.conn.as_mut().expect("Failed to get connection.");

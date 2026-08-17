@@ -105,6 +105,10 @@ impl Home {
                         HomeAction::Copy(service.name.clone())
                     }
                 }
+                KeyCode::Delete => {
+                    let service = self.get_selected_service();
+                    HomeAction::Delete(service.clone())
+                }
                 _ => HomeAction::None,
             }
         }

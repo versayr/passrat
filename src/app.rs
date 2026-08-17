@@ -17,6 +17,7 @@ pub struct App {
     pub exit: bool,
     pub mode: Mode,
     pub conn: Option<Connection>,
+    // TODO remove duplicated ServiceLists in App & Home
     pub services: ServiceList,
     pub clipboard: Clipboard,
     // TODO remove this hack

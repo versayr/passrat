@@ -38,7 +38,7 @@ pub struct DetailList {
 #[derive(Debug)]
 pub enum ViewAction {
     Edit(Account),
-    // Delete(Account),
+    Delete(Account),
     // Paste(String),
     Copy(String),
     Return,
@@ -87,22 +87,21 @@ impl View {
                 if self.accounts.state.selected().is_none() {
                     ViewAction::None
                 } else {
-                    let selected = self
-                        .accounts
-                        .state
-                        .selected()
-                        .expect("No account is selected.");
-                    let account = self
-                        .accounts
-                        .list
-                        .get(selected)
-                        .expect("Index is out of range.");
+                    let account = self.get_selected_account();
                     ViewAction::Edit(account.clone())
                 }
             }
             KeyCode::Char('n') => {
                 let id = self.service.id.expect("No service id found");
                 ViewAction::Edit(Account::new(id))
+            }
+            KeyCode::Delete => {
+                if self.accounts.state.selected().is_none() {
+                    ViewAction::None
+                } else {
+                    let account = self.get_selected_account();
+                    ViewAction::Delete(account.clone())
+                }
             }
             _ => ViewAction::None,
         }
@@ -183,6 +182,18 @@ impl View {
         let list = construct_detail_list(account).block(block);
 
         StatefulWidget::render(list, area, buf, &mut self.details.state);
+    }
+
+    fn get_selected_account(&self) -> &Account {
+        let selected = self
+            .accounts
+            .state
+            .selected()
+            .expect("No account is selected.");
+        self.accounts
+            .list
+            .get(selected)
+            .expect("Index is out of range.")
     }
 }
 

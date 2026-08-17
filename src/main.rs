@@ -1,6 +1,7 @@
 use crate::app::App;
 
 mod app;
+mod confirm_modal;
 mod db;
 mod forms;
 mod helpers;
