@@ -17,12 +17,12 @@ pub struct Edit {
     pub target: Target,
     pub list: Vec<Field>,
     pub state: ListState,
+    input: Option<String>,
 }
 
 #[derive(Debug)]
 pub enum EditAction {
     Submit(Target),
-    // Copy(String),
     // Paste(String),
     Return,
     Help,
@@ -38,10 +38,42 @@ impl Edit {
             target,
             list,
             state,
+            input: None,
         }
     }
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> EditAction {
+        if self.input.is_some() {
+            match event.code {
+                KeyCode::Esc => self.input = None,
+                KeyCode::Enter => {
+                    if let Some(idx) = self.state.selected() {
+                        let value = self.input.as_ref().expect("No input is set.").clone();
+                        self.list
+                            .get_mut(idx)
+                            .expect("Failed to write new value to field list.")
+                            .value = value;
+                    }
+                    self.input = None;
+                }
+                KeyCode::Backspace => {
+                    self.input
+                        .as_mut()
+                        .expect("Input string does not exist.")
+                        .pop();
+                }
+                KeyCode::Char(c) => {
+                    self.input
+                        .as_mut()
+                        .expect("Input string does not exist.")
+                        .push(c);
+                }
+                _ => {}
+            }
+
+            return EditAction::None;
+        }
+
         match event.code {
             KeyCode::Char('h' | '?') => EditAction::Help,
             KeyCode::Esc | KeyCode::Char('q') => EditAction::Return,
@@ -51,6 +83,13 @@ impl Edit {
             }
             KeyCode::Char('k') | KeyCode::Up => {
                 self.state.select_previous();
+                EditAction::None
+            }
+            KeyCode::Char('e' | 'i') => {
+                if let Some(idx) = self.state.selected() {
+                    let field = self.list.get(idx).expect("Failed to index into list.");
+                    self.input = Some(field.value.clone());
+                }
                 EditAction::None
             }
             KeyCode::Enter => EditAction::Submit(self.target.clone()),
@@ -78,7 +117,10 @@ impl Widget for &mut Edit {
             .enumerate()
             .map(|(idx, field)| {
                 let value = if Some(idx) == selected {
-                    format!("[ {} ]", field.value)
+                    self.input.as_ref().map_or_else(
+                        || format!("[ {} ]", field.value),
+                        |value| format!("[ {value}| ]"),
+                    )
                 } else {
                     format!("  {}  ", field.value)
                 };

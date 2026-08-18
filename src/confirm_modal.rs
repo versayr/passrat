@@ -8,7 +8,6 @@ use ratatui::{
 #[derive(Debug, Default)]
 pub struct Modal {
     label: String,
-    confirm: bool,
 }
 
 impl Widget for &Modal {
