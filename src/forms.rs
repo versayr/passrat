@@ -1,5 +1,6 @@
 use crate::models::{
-    Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username, Validator::{Email, Numeric, Url},
+    Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
+    Validator::{Date, Email, NonEmpty, Numeric, Url},
 };
 use std::clone::Clone;
 
@@ -13,12 +14,12 @@ impl Fields for Service {
             Field {
                 label: "Service Name".to_string(),
                 value: self.name.clone(),
-                validator: None
+                validator: Some(NonEmpty),
             },
             Field {
                 label: "Url".to_string(),
                 value: self.url.as_ref().map_or_else(String::new, Clone::clone),
-                validator: Some(Url)
+                validator: Some(Url),
             },
         ]
     }
@@ -37,46 +38,46 @@ impl Fields for Account {
             Field {
                 label: "Username".to_string(),
                 value: String::from(username),
-                validator: None
+                validator: None,
             },
             Field {
                 label: "Email".to_string(),
                 value: String::from(email),
-                validator: Some(Email)
+                validator: Some(Email),
             },
             Field {
                 label: "Password".to_string(),
                 value: self.password.clone(),
-                validator: None
+                validator: None,
             },
             Field {
                 label: "Access Token".to_string(),
                 value: self.access_token.clone(),
-                validator: None
+                validator: None,
             },
             Field {
                 label: "PIN".to_string(),
                 value: self
                     .pin
                     .map_or_else(String::new, |pin| pin.clone().to_string()),
-                validator: Some(Numeric)
+                validator: Some(Numeric),
             },
             Field {
                 label: "Passcode".to_string(),
                 value: self
                     .passcode
                     .map_or_else(String::new, |passcode| passcode.clone().to_string()),
-                validator: Some(Numeric)
+                validator: Some(Numeric),
             },
             Field {
                 label: "Last Change".to_string(),
                 value: self.last_change.format("%Y-%m-%d").to_string(),
-                validator: None
+                validator: Some(Date),
             },
             Field {
                 label: "Account Created".to_string(),
                 value: self.creation_date.format("%Y-%m-%d").to_string(),
-                validator: None
+                validator: Some(Date),
             },
         ]
     }
@@ -88,12 +89,12 @@ impl Fields for SecurityQuestion {
             Field {
                 label: "Question".to_string(),
                 value: self.question.clone(),
-                validator: None
+                validator: Some(NonEmpty),
             },
             Field {
                 label: "Answer".to_string(),
                 value: self.answer.clone(),
-                validator: None
+                validator: Some(NonEmpty),
             },
         ]
     }
@@ -104,7 +105,7 @@ impl Fields for Shortcut {
         vec![Field {
             label: "Sequence".to_string(),
             value: self.sequence.clone(),
-                validator: None
+            validator: Some(NonEmpty),
         }]
     }
 }

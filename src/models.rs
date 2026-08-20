@@ -81,6 +81,7 @@ pub enum Validator {
     Url, 
     Date, 
     Numeric, 
+    NonEmpty,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
