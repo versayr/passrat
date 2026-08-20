@@ -72,6 +72,15 @@ pub enum Target {
 pub struct Field {
     pub label: String,
     pub value: String,
+    pub validator: Option<Validator>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Validator {
+    Email, 
+    Url, 
+    Date, 
+    Numeric, 
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

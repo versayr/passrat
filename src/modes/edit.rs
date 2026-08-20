@@ -44,33 +44,7 @@ impl Edit {
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> EditAction {
         if self.input.is_some() {
-            match event.code {
-                KeyCode::Esc => self.input = None,
-                KeyCode::Enter => {
-                    if let Some(idx) = self.state.selected() {
-                        let value = self.input.as_ref().expect("No input is set.").clone();
-                        self.list
-                            .get_mut(idx)
-                            .expect("Failed to write new value to field list.")
-                            .value = value;
-                    }
-                    self.input = None;
-                }
-                KeyCode::Backspace => {
-                    self.input
-                        .as_mut()
-                        .expect("Input string does not exist.")
-                        .pop();
-                }
-                KeyCode::Char(c) => {
-                    self.input
-                        .as_mut()
-                        .expect("Input string does not exist.")
-                        .push(c);
-                }
-                _ => {}
-            }
-
+            self.handle_edit_inputs(event);
             return EditAction::None;
         }
 
@@ -94,6 +68,35 @@ impl Edit {
             }
             KeyCode::Enter => EditAction::Submit(self.target.clone()),
             _ => EditAction::None,
+        }
+    }
+
+    fn handle_edit_inputs(&mut self, event: KeyEvent) {
+        match event.code {
+            KeyCode::Esc => self.input = None,
+            KeyCode::Enter => {
+                if let Some(idx) = self.state.selected() {
+                    let value = self.input.as_ref().expect("No input is set.").clone();
+                    self.list
+                        .get_mut(idx)
+                        .expect("Failed to write new value to field list.")
+                        .value = value;
+                }
+                self.input = None;
+            }
+            KeyCode::Backspace => {
+                self.input
+                    .as_mut()
+                    .expect("Input string does not exist.")
+                    .pop();
+                }
+            KeyCode::Char(c) => {
+                self.input
+                    .as_mut()
+                    .expect("Input string does not exist.")
+                    .push(c);
+                }
+            _ => {}
         }
     }
 }
