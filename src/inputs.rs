@@ -101,6 +101,14 @@ impl App {
                     // TODO if user was editing an account, return to view/service
                     self.mode = Mode::Home(Home::new(list));
                 }
+                EditAction::Paste => {
+                    if let Some(ref mut input) = edit.input {
+                        *input = self
+                            .clipboard
+                            .get_text()
+                            .expect("Failed to paste from clipboard.");
+                    }
+                }
                 EditAction::Quit => self.exit = true,
                 EditAction::Help => self.mode = Help,
                 EditAction::None => {}

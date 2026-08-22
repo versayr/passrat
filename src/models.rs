@@ -1,6 +1,7 @@
 use chrono::{Local, NaiveDate};
 use rusqlite::{Result, ToSql, types::ToSqlOutput};
 use serde::{Deserialize, Serialize};
+use crate::validators::Validator;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Service {
@@ -14,10 +15,8 @@ pub struct Account {
     pub id: Option<u32>,
     pub service_id: u32,
     pub contact: ContactInfo,
-    // pub username: Option<String>,
     pub last_change: NaiveDate,
     pub creation_date: NaiveDate,
-    // pub email: String,
     pub password: String,
     pub access_token: String,
     pub pin: Option<u32>,
@@ -30,10 +29,8 @@ impl Account {
             id: None,
             service_id,
             contact: ContactInfo::default(),
-            // username: None,
             last_change: Local::now().date_naive(),
             creation_date: Local::now().date_naive(),
-            // email: String::new(),
             password: String::new(),
             access_token: String::new(),
             pin: None,
@@ -72,16 +69,8 @@ pub enum Target {
 pub struct Field {
     pub label: String,
     pub value: String,
-    pub validator: Option<Validator>
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Validator {
-    Email, 
-    Url, 
-    Date, 
-    Numeric, 
-    NonEmpty,
+    pub validator: Option<Validator>,
+    pub error: Option<String>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

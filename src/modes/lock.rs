@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Rect},
-    style::Style,
+    style::Stylize,
     text::{Line, Span},
     widgets::{Block, BorderType, Padding, Paragraph, Widget},
 };
@@ -64,7 +64,7 @@ impl Widget for &Lock {
         let input = Paragraph::new(vec![
             Line::from(vec![
                 Span::from("*".repeat(self.input.len())),
-                Span::styled(" ", Style::reversed(Style::default())),
+                " ".slow_blink().reversed(),
             ]),
             Line::from(Span::from(&self.alert)),
         ])

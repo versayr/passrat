@@ -8,6 +8,7 @@ mod helpers;
 mod inputs;
 mod models;
 mod ui;
+mod validators;
 mod modes {
     pub mod edit;
     pub mod home;
