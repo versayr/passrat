@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use email_address_parser::EmailAddress as ParsedEmailAddress;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -23,8 +24,10 @@ impl Validator {
     }
 }
 
-const fn validate_email(s: &str) -> Result<(), String> {
-    Ok(())
+fn validate_email(s: &str) -> Result<(), String> {
+    ParsedEmailAddress::parse(s.trim(), None)
+        .map(|_| ())
+        .ok_or_else(|| "Enter a valid email address.".to_string())
 }
 
 fn validate_url(s: &str) -> Result<(), String> {
