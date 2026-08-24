@@ -70,7 +70,12 @@ impl Edit {
                 self.input = Some(String::new());
                 EditAction::Paste
             }
-            KeyCode::Enter => EditAction::Submit(self.target.clone()),
+            KeyCode::Enter => {
+                // generate new target from fields & old target struct 
+                // can fail if missing fields
+                // submit, but if this fails due to duplicate entry in db we need to reset somehow
+                EditAction::Submit(self.target.clone())
+            }
             _ => EditAction::None,
         }
     }

@@ -115,6 +115,8 @@ impl App {
                 EditAction::Submit(target) => {
                     // TODO perhaps confirm/discard here?
                     self.handle_target(&target);
+                    // if error with submitting SQL, set self.mode = Mode::Edit(edit) with errors
+                    // populated
                     // TODO send to previous mode (store on app? Option<Mode> ?)
                     match target {
                         Target::Shortcut(_) | Target::SecurityQuestion(_) => {

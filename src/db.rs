@@ -6,7 +6,7 @@ use xdg::BaseDirectories;
 use crate::{
     app::{App, Mode},
     models::{
-        Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username,
+        Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username 
     },
     modes::{home::Home, lock::Lock},
 };
@@ -102,15 +102,15 @@ impl Account {
         let creation_date_string: String = row
             .get("creation_date")
             .expect("Failed to get last change date.");
-        let email: Option<String> = row.get("email").expect("Failed to get email.");
-        let username: Option<String> = row.get("username").expect("Failed to get username.");
+        let email: Option<EmailAddress> = row.get("email").expect("Failed to get email.");
+        let username: Option<Username> = row.get("username").expect("Failed to get username.");
 
         let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
         let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")
             .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
-        let email = email.and_then(|s| (!s.is_empty()).then_some(s));
-        let username = username.and_then(|s| (!s.is_empty()).then_some(s));
+        let email: Option<EmailAddress> = email.and_then(|s| (!s.is_empty()).then_some(s));
+        let username: Option<Username> = username.and_then(|s| (!s.is_empty()).then_some(s));
         let contact = ContactInfo::from_options(email, username);
 
         Self {
@@ -282,8 +282,8 @@ impl App {
         let contact = &account.contact;
         let (username, email) = match contact {
             ContactInfo::Both(email, username) => (username, email),
-            ContactInfo::Email(email) => (&Username(String::new()), email),
-            ContactInfo::Username(username) => (username, &EmailAddress(String::new())),
+            ContactInfo::Email(email) => (&String::new(), email),
+            ContactInfo::Username(username) => (username, &String::new()),
         };
 
         let _ = conn.execute(
@@ -319,8 +319,8 @@ impl App {
         let contact = &account.contact;
         let (username, email) = match contact {
             ContactInfo::Both(email, username) => (username, email),
-            ContactInfo::Email(email) => (&Username(String::new()), email),
-            ContactInfo::Username(username) => (username, &EmailAddress(String::new())),
+            ContactInfo::Email(email) => (&String::new(), email),
+            ContactInfo::Username(username) => (username, &String::new()),
         };
 
         let _ = conn.execute(

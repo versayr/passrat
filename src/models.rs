@@ -1,5 +1,4 @@
 use chrono::{Local, NaiveDate};
-use rusqlite::{Result, ToSql, types::ToSqlOutput};
 use serde::{Deserialize, Serialize};
 use crate::validators::Validator;
 
@@ -82,59 +81,62 @@ pub enum ContactInfo {
 
 impl Default for ContactInfo {
     fn default() -> Self {
-        Self::Username(Username(String::new()))
+        Self::Username(String::new())
     }
 }
 
 impl ContactInfo {
-    pub fn from_options(email: Option<String>, username: Option<String>) -> Self {
+    pub fn from_options(email: Option<EmailAddress>, username: Option<Username>) -> Self {
         match (email, username) {
-            (Some(email), Some(username)) => Self::Both(EmailAddress(email), Username(username)),
-            (Some(email), None) => Self::Email(EmailAddress(email)),
-            (None, Some(username)) => Self::Username(Username(username)),
+            (Some(email), Some(username)) => Self::Both(email, username),
+            (Some(email), None) => Self::Email(email),
+            (None, Some(username)) => Self::Username(username),
             _ => Self::default(),
         }
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EmailAddress(pub String);
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct EmailAddress(pub String);
 
-impl From<String> for EmailAddress {
-    fn from(str: String) -> Self {
-        Self(str)
-    }
-}
+pub type EmailAddress = String;
+pub type Username = String;
 
-impl From<&EmailAddress> for String {
-    fn from(value: &EmailAddress) -> Self {
-        value.0.clone()
-    }
-}
+//impl From<String> for EmailAddress {
+//    fn from(str: String) -> Self {
+//        Self(str)
+//    }
+//}
 
-impl ToSql for EmailAddress {
-    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::from(self.0.as_str()))
-    }
-}
+//impl From<&EmailAddress> for String {
+//    fn from(value: &EmailAddress) -> Self {
+//        value.0.clone()
+//    }
+//}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Username(pub String);
+//impl ToSql for EmailAddress {
+//    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+//        Ok(ToSqlOutput::from(self.0.as_str()))
+//    }
+//}
 
-impl From<String> for Username {
-    fn from(str: String) -> Self {
-        Self(str)
-    }
-}
-
-impl From<&Username> for String {
-    fn from(value: &Username) -> Self {
-        value.0.clone()
-    }
-}
-
-impl ToSql for Username {
-    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::from(self.0.as_str()))
-    }
-}
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct Username(pub String);
+// 
+// impl From<String> for Username {
+//     fn from(str: String) -> Self {
+//         Self(str)
+//     }
+// }
+// 
+// impl From<&Username> for String {
+//     fn from(value: &Username) -> Self {
+//         value.0.clone()
+//     }
+// }
+// 
+// impl ToSql for Username {
+//     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
+//         Ok(ToSqlOutput::from(self.0.as_str()))
+//     }
+// }
