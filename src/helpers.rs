@@ -24,8 +24,7 @@ pub fn construct_detail_field(label: &str, value: &str, width: usize) -> Line<'s
 pub fn construct_detail_list(account: &Account) -> List<'_> {
     let mut lines = vec![];
 
-    let contact: &ContactInfo = &account.contact;
-    let (email, username) = match contact {
+    let (email, username) = match &account.contact {
         ContactInfo::Both(email, name) => (Some(email), Some(name)),
         ContactInfo::Email(email) => (Some(email), None),
         ContactInfo::Username(name) => (None, Some(name)),
@@ -80,3 +79,5 @@ pub fn construct_detail_list(account: &Account) -> List<'_> {
 
     List::new(lines)
 }
+
+// pub fn apply_fields

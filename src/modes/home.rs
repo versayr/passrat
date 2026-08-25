@@ -52,65 +52,65 @@ impl Home {
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> HomeAction {
         if self.set_filter {
-            self.handle_filter_inputs(event)
-        } else {
-            match event.code {
-                KeyCode::Esc => {
-                    if self.filter.is_empty() {
-                        HomeAction::Quit
-                    } else {
-                        self.filter.clear();
-                        HomeAction::None
-                    }
-                }
-                KeyCode::Char('q') => HomeAction::Quit,
-                KeyCode::Char('h' | '?') => HomeAction::Help,
-                KeyCode::Char('j') | KeyCode::Down => {
-                    self.services.state.select_next();
+            return self.handle_filter_inputs(event);
+        }
+
+        match event.code {
+            KeyCode::Esc => {
+                if self.filter.is_empty() {
+                    HomeAction::Quit
+                } else {
+                    self.filter.clear();
                     HomeAction::None
                 }
-                KeyCode::Char('k') | KeyCode::Up => {
-                    self.services.state.select_previous();
-                    HomeAction::None
-                }
-                KeyCode::Char('e') => {
-                    if self.services.list.is_empty() {
-                        HomeAction::None
-                    } else {
-                        let service = self.get_selected_service();
-                        HomeAction::Edit(service.clone())
-                    }
-                }
-                KeyCode::Char('n') => HomeAction::Edit(Service::default()),
-                // KeyCode::Char('\\') => self.mode = Mode::Cuts,
-                KeyCode::Char('/') => {
-                    if !self.services.list.is_empty() {
-                        self.set_filter = true;
-                    }
-                    HomeAction::None
-                }
-                KeyCode::Enter => {
-                    if self.services.list.is_empty() {
-                        HomeAction::None
-                    } else {
-                        let service = self.get_selected_service();
-                        HomeAction::View(service.clone())
-                    }
-                }
-                KeyCode::Char('y') => {
-                    if self.services.list.is_empty() {
-                        HomeAction::None
-                    } else {
-                        let service = self.get_selected_service();
-                        HomeAction::Copy(service.name.clone())
-                    }
-                }
-                KeyCode::Delete => {
-                    let service = self.get_selected_service();
-                    HomeAction::Delete(service.clone())
-                }
-                _ => HomeAction::None,
             }
+            KeyCode::Char('q') => HomeAction::Quit,
+            KeyCode::Char('h' | '?') => HomeAction::Help,
+            KeyCode::Char('j') | KeyCode::Down => {
+                self.services.state.select_next();
+                HomeAction::None
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                self.services.state.select_previous();
+                HomeAction::None
+            }
+            KeyCode::Char('e') => {
+                if self.services.list.is_empty() {
+                    HomeAction::None
+                } else {
+                    let service = self.get_selected_service();
+                    HomeAction::Edit(service.clone())
+                }
+            }
+            KeyCode::Char('n') => HomeAction::Edit(Service::default()),
+            // KeyCode::Char('\\') => self.mode = Mode::Cuts,
+            KeyCode::Char('/') => {
+                if !self.services.list.is_empty() {
+                    self.set_filter = true;
+                }
+                HomeAction::None
+            }
+            KeyCode::Enter => {
+                if self.services.list.is_empty() {
+                    HomeAction::None
+                } else {
+                    let service = self.get_selected_service();
+                    HomeAction::View(service.clone())
+                }
+            }
+            KeyCode::Char('y') => {
+                if self.services.list.is_empty() {
+                    HomeAction::None
+                } else {
+                    let service = self.get_selected_service();
+                    HomeAction::Copy(service.name.clone())
+                }
+            }
+            KeyCode::Delete => {
+                let service = self.get_selected_service();
+                HomeAction::Delete(service.clone())
+            }
+            _ => HomeAction::None,
         }
     }
 

@@ -118,18 +118,21 @@ impl App {
                     // if error with submitting SQL, set self.mode = Mode::Edit(edit) with errors
                     // populated
                     // TODO send to previous mode (store on app? Option<Mode> ?)
-                    match target {
+                    self.mode = match target {
                         Target::Shortcut(_) | Target::SecurityQuestion(_) => {
                             let list = self.get_services().expect("Failed to get services.");
-                            self.mode = Mode::Home(Home::new(list));
+                            Mode::Home(Home::new(list))
                         }
                         Target::Service(service) => {
-                            let service_id =
-                                service.id.expect("Malformed service info - missing id.");
-                            let list = self
-                                .get_accounts(service_id)
-                                .expect("Failed to get accounts.");
-                            self.mode = Mode::View(View::new(&service, list));
+                            if let Some(id) = service.id {
+                                let list = self
+                                    .get_accounts(id)
+                                    .expect("Failed to get accounts.");
+                                Mode::View(View::new(&service, list))
+                            } else {
+                                let list = self.get_services().expect("Failed to get services.");
+                                Mode::Home(Home::new(list))
+                            }
                         }
                         Target::Account(account) => {
                             let service_id = account.service_id;
@@ -139,7 +142,7 @@ impl App {
                             let service = self
                                 .get_service(service_id)
                                 .expect("Failed to get service.");
-                            self.mode = Mode::View(View::new(&service, list));
+                            Mode::View(View::new(&service, list))
                         }
                     }
                 }

@@ -64,12 +64,15 @@ pub enum Target {
     Shortcut(Shortcut),
 }
 
+type ApplyFn = fn(&mut Target, &str) -> Result<(), String>;
+
 #[derive(Debug, Clone)]
 pub struct Field {
     pub label: String,
     pub value: String,
+    pub error: Option<String>,
     pub validator: Option<Validator>,
-    pub error: Option<String>
+    pub apply: ApplyFn,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

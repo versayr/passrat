@@ -12,7 +12,7 @@ use ratatui::{
 
 use crate::{
     helpers::construct_detail_list,
-    models::{Account, ContactInfo, Field, Service},
+    models::{Account, ContactInfo, Service},
 };
 
 #[derive(Debug, Default)]
@@ -21,6 +21,7 @@ pub struct View {
     pub accounts: AccountList,
     pub details: DetailList,
     pub selected: Pane,
+    pub hide_sensitive: bool,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -31,7 +32,7 @@ pub struct AccountList {
 
 #[derive(Debug, Default, Clone)]
 pub struct DetailList {
-    pub list: Vec<Field>,
+    pub list: Vec<Detail>,
     pub state: ListState,
 }
 
@@ -39,7 +40,6 @@ pub struct DetailList {
 pub enum ViewAction {
     Edit(Account),
     Delete(Account),
-    // Paste(String),
     Copy(String),
     Return,
     Help,
@@ -47,11 +47,18 @@ pub enum ViewAction {
     None,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd)]
 pub enum Pane {
     #[default]
     Left,
     Right,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct Detail {
+    label: String,
+    value: String,
+    hidden: bool,
 }
 
 impl View {
@@ -67,11 +74,16 @@ impl View {
             service: service.clone(),
             accounts,
             details: DetailList::default(),
-            selected: Pane::Left,
+            selected: Pane::default(),
+            hide_sensitive: true,
         }
     }
 
     pub fn handle_inputs(&mut self, event: KeyEvent) -> ViewAction {
+        if self.selected == Pane::Right {
+            return self.handle_detail_inputs(event);
+        }
+
         match event.code {
             KeyCode::Char('q') | KeyCode::Esc => ViewAction::Return,
             KeyCode::Char('h' | '?') => ViewAction::Help,
@@ -81,6 +93,11 @@ impl View {
             }
             KeyCode::Char('k') | KeyCode::Up => {
                 self.accounts.state.select_previous();
+                ViewAction::None
+            }
+            KeyCode::Tab | KeyCode::Right | KeyCode::Char('l') => {
+                self.selected = Pane::Right;
+                self.details.state.select_first();
                 ViewAction::None
             }
             KeyCode::Char('e') => {
@@ -99,8 +116,71 @@ impl View {
                 if self.accounts.state.selected().is_none() {
                     ViewAction::None
                 } else {
+                    // TODO confirm this action first with confirm_modal
                     let account = self.get_selected_account();
                     ViewAction::Delete(account.clone())
+                }
+            }
+            KeyCode::Char('y') => {
+                if self.accounts.state.selected().is_none() {
+                    ViewAction::None
+                } else {
+                    let account = self.get_selected_account().clone();
+                    match account.contact {
+                        ContactInfo::Email(email) => ViewAction::Copy(email),
+                        ContactInfo::Both(_, username) | ContactInfo::Username(username) => {
+                            ViewAction::Copy(username)
+                        }
+                    }
+                }
+            }
+            _ => ViewAction::None,
+        }
+    }
+
+    fn handle_detail_inputs(&mut self, event: KeyEvent) -> ViewAction {
+        match event.code {
+            KeyCode::Char('q' | 'h')
+            | KeyCode::Esc
+            | KeyCode::Right
+            | KeyCode::Left
+            | KeyCode::Tab => {
+                self.selected = Pane::Left;
+                self.details.state.select(None);
+                ViewAction::None
+            }
+            KeyCode::Char('?') => ViewAction::Help,
+            KeyCode::Char('j') | KeyCode::Down => {
+                self.details.state.select_next();
+                ViewAction::None
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                self.details.state.select_previous();
+                ViewAction::None
+            }
+            KeyCode::Char('e') => {
+                if self.accounts.state.selected().is_none() {
+                    ViewAction::None
+                } else {
+                    let account = self.get_selected_account();
+                    ViewAction::Edit(account.clone())
+                }
+            }
+            KeyCode::Char('y') => {
+                if self.details.list.is_empty() {
+                    ViewAction::None
+                } else {
+                    let selected = self
+                        .details
+                        .state
+                        .selected()
+                        .expect("Failed to get selected detail.");
+                    let detail = self
+                        .details
+                        .list
+                        .get(selected)
+                        .expect("Index out of range.");
+                    ViewAction::Copy(detail.value.clone())
                 }
             }
             _ => ViewAction::None,
@@ -127,28 +207,26 @@ impl View {
     }
 
     fn render_account_list(&mut self, area: Rect, buf: &mut Buffer) {
-        let accounts = &self.accounts.clone();
+        let accounts = &self.accounts;
 
         let block = Block::bordered()
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNTS ] ]");
 
-        let accounts: Vec<ListItem> = accounts
+        let account_list: Vec<ListItem> = accounts
             .list
             .iter()
             .map(|account| {
                 let text = match &account.contact {
-                    ContactInfo::Both(_, username) | ContactInfo::Username(username) => {
-                        String::from(username)
-                    }
-                    ContactInfo::Email(email) => String::from(email),
+                    ContactInfo::Both(_, username) | ContactInfo::Username(username) => username,
+                    ContactInfo::Email(email) => email,
                 };
-                ListItem::new(Line::from(text))
+                ListItem::new(Line::raw(text.clone()))
             })
             .collect();
 
-        let list = List::new(accounts)
+        let list = List::new(account_list)
             .highlight_symbol(" > ")
             .highlight_style(
                 Style::new()
@@ -162,16 +240,7 @@ impl View {
     }
 
     fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
-        let selected_idx = self
-            .accounts
-            .state
-            .selected()
-            .expect("No account is selected.");
-        let account = self
-            .accounts
-            .list
-            .get(selected_idx)
-            .expect("Index out of range.");
+        let account = self.get_selected_account().clone();
 
         let block = Block::bordered()
             .border_type(BorderType::Double)
@@ -179,7 +248,13 @@ impl View {
             .title("[ [ ACCOUNT DETAILS ] ]")
             .padding(Padding::left(1));
 
-        let list = construct_detail_list(account).block(block);
+        let list = construct_detail_list(&account)
+            .block(block)
+            .highlight_style(
+                Style::new()
+                    .add_modifier(Modifier::BOLD)
+                    .add_modifier(Modifier::REVERSED),
+            );
 
         StatefulWidget::render(list, area, buf, &mut self.details.state);
     }

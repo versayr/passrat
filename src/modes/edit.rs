@@ -74,7 +74,11 @@ impl Edit {
                 // generate new target from fields & old target struct 
                 // can fail if missing fields
                 // submit, but if this fails due to duplicate entry in db we need to reset somehow
-                EditAction::Submit(self.target.clone())
+                let mut target = self.target.clone();
+                for field in &self.list {
+                    (field.apply)(&mut target, &field.value).expect("Failed to apply fields.");
+                }
+                EditAction::Submit(target)
             }
             _ => EditAction::None,
         }
