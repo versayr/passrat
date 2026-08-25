@@ -71,9 +71,8 @@ impl Edit {
                 EditAction::Paste
             }
             KeyCode::Enter => {
-                // generate new target from fields & old target struct 
-                // can fail if missing fields
-                // submit, but if this fails due to duplicate entry in db we need to reset somehow
+                // TODO check if missing email & username on accounts
+                // TODO automatically update last change date if any changes were made
                 let mut target = self.target.clone();
                 for field in &self.list {
                     (field.apply)(&mut target, &field.value).expect("Failed to apply fields.");

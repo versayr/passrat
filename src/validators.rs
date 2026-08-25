@@ -46,6 +46,10 @@ fn validate_date(s: &str) -> Result<(), String> {
 }
 
 fn validate_numeric(s: &str) -> Result<(), String> {
+    if s.is_empty() {
+        return Ok(());
+    }
+
     s.trim()
         .parse::<u32>()
         .map(|_| ())

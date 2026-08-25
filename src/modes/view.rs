@@ -21,7 +21,7 @@ pub struct View {
     pub accounts: AccountList,
     pub details: DetailList,
     pub selected: Pane,
-    pub hide_sensitive: bool,
+    pub hide_sensitive: ShowHiddenFields,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -54,6 +54,14 @@ pub enum Pane {
     Right,
 }
 
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd)]
+pub enum ShowHiddenFields {
+    Always,
+    WhenSelected, 
+    #[default]
+    Never, 
+}
+
 #[derive(Debug, Default, Clone)]
 pub struct Detail {
     label: String,
@@ -75,7 +83,7 @@ impl View {
             accounts,
             details: DetailList::default(),
             selected: Pane::default(),
-            hide_sensitive: true,
+            hide_sensitive: ShowHiddenFields::default(),
         }
     }
 
