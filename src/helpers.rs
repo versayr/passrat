@@ -1,4 +1,4 @@
-use std::{error::Error, fs::File, io::BufReader};
+use std::error::Error;
 
 use chrono::{Datelike, NaiveDate};
 use ordinal::ToOrdinal;
@@ -84,10 +84,7 @@ pub fn construct_detail_list(account: &Account) -> List<'_> {
 }
 
 pub fn gen_password() -> Result<String, Box<dyn Error>> {
-    let file = File::open("src/assets/eff_large_wordlist.txt")?;
-    let reader = BufReader::new(file);
-    let config = PassphraseConfig::default();
-    let generator = PassphraseGenerator::new(reader, config)?;
+    let generator = PassphraseGenerator::with_default_wordlist(PassphraseConfig::default())?;
     let password = generator.generate()?;
     Ok(password)
 }

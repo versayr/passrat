@@ -12,7 +12,7 @@ email-address-parser = "2.0.2"
 ordinal = "0.4.0"
 ratatui = "0.30.2"
 rusqlite = { version = "0.39.0", features = ["bundled-sqlcipher"] }
-rustpass = { version = "0.2.0", features = [] }
+rustpass = { version = "0.2.1", features = [] }
 serde = { version = "1.0.229", features = ["derive"] }
 url = "2.5.8"
 xdg = "3.0.0"

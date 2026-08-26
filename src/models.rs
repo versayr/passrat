@@ -99,47 +99,5 @@ impl ContactInfo {
     }
 }
 
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct EmailAddress(pub String);
-
 pub type EmailAddress = String;
 pub type Username = String;
-
-//impl From<String> for EmailAddress {
-//    fn from(str: String) -> Self {
-//        Self(str)
-//    }
-//}
-
-//impl From<&EmailAddress> for String {
-//    fn from(value: &EmailAddress) -> Self {
-//        value.0.clone()
-//    }
-//}
-
-//impl ToSql for EmailAddress {
-//    fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-//        Ok(ToSqlOutput::from(self.0.as_str()))
-//    }
-//}
-
-// #[derive(Debug, Clone, Serialize, Deserialize)]
-// pub struct Username(pub String);
-// 
-// impl From<String> for Username {
-//     fn from(str: String) -> Self {
-//         Self(str)
-//     }
-// }
-// 
-// impl From<&Username> for String {
-//     fn from(value: &Username) -> Self {
-//         value.0.clone()
-//     }
-// }
-// 
-// impl ToSql for Username {
-//     fn to_sql(&self) -> Result<ToSqlOutput<'_>> {
-//         Ok(ToSqlOutput::from(self.0.as_str()))
-//     }
-// }

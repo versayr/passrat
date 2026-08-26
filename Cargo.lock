@@ -1922,9 +1922,9 @@ dependencies = [
 
 [[package]]
 name = "rustpass"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53bd02a3f3cdcf3d52b23b2c2f8106993a2fefe75a2bcb694f9ea27340df118a"
+checksum = "37ca63d1c4a357f1e3f70bc87a493c5ebaeac9d3c95e5119fb31aac4ed64bcf6"
 dependencies = [
  "clap",
  "rand 0.10.2",
