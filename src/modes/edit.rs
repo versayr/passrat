@@ -10,7 +10,7 @@ use ratatui::{
     },
 };
 
-use crate::models::{Field, Target};
+use crate::{helpers::gen_password, models::{Field, Target}};
 
 #[derive(Debug)]
 pub struct Edit {
@@ -69,6 +69,15 @@ impl Edit {
             KeyCode::Char('p') => {
                 self.input = Some(String::new());
                 EditAction::Paste
+            }
+            KeyCode::Char('P') => {
+                if let Some(idx) = self.state.selected() {
+                    let field = self.list.get(idx).expect("Failed to index into list.");
+                    if field.label == "Password" {
+                        self.input = Some(gen_password().expect("Failed to generate password."));
+                    }
+                }
+                EditAction::None
             }
             KeyCode::Enter => {
                 // TODO check if missing email & username on accounts
