@@ -1,16 +1,15 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    buffer::Buffer,
-    layout::Rect,
-    style::Stylize,
-    text::{Line, Span},
-    widgets::{
-        Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, StatefulWidget,
-        Widget,
+    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::Stylize, text::{Line, Span}, widgets::{
+        Block, BorderType, HighlightSpacing, List, ListState, Padding, StatefulWidget, Widget,
     },
 };
+use rustpass::PassphraseConfig;
 
-use crate::{helpers::gen_password, models::{Field, Target}};
+use crate::{
+    helpers::{construct_field_list, gen_password},
+    models::{Field, Target},
+};
 
 #[derive(Debug)]
 pub struct Edit {
@@ -18,6 +17,7 @@ pub struct Edit {
     pub list: Vec<Field>,
     pub state: ListState,
     pub input: Option<String>,
+    error: Option<String>,
 }
 
 #[derive(Debug)]
@@ -39,6 +39,7 @@ impl Edit {
             list,
             state,
             input: None,
+            error: None,
         }
     }
 
@@ -74,19 +75,25 @@ impl Edit {
                 if let Some(idx) = self.state.selected() {
                     let field = self.list.get(idx).expect("Failed to index into list.");
                     if field.label == "Password" {
-                        self.input = Some(gen_password().expect("Failed to generate password."));
+                        self.input = Some(
+                            gen_password(PassphraseConfig::default())
+                                .expect("Failed to generate password."),
+                        );
                     }
                 }
                 EditAction::None
             }
             KeyCode::Enter => {
-                // TODO check if missing email & username on accounts
-                // TODO automatically update last change date if any changes were made
                 let mut target = self.target.clone();
                 for field in &self.list {
                     (field.apply)(&mut target, &field.value).expect("Failed to apply fields.");
                 }
-                EditAction::Submit(target)
+                if let Err(error) = target.validate() {
+                    self.error = Some(error);
+                    EditAction::None
+                } else {
+                    EditAction::Submit(target)
+                }
             }
             _ => EditAction::None,
         }
@@ -143,6 +150,17 @@ impl Edit {
             }
         }
     }
+
+    fn render_error(&self, area: Rect, buf: &mut Buffer) {
+        if let Some(error) = &self.error {
+            let line = Line::from(vec![
+                Span::raw("     Error: "),
+                Span::raw(error),
+            ]).red().bold();
+
+            Widget::render(line, area, buf);
+        }
+    }
 }
 
 impl Widget for &mut Edit {
@@ -150,57 +168,33 @@ impl Widget for &mut Edit {
     where
         Self: Sized,
     {
-        let selected = self.state.selected();
-
         let title = Line::from(" Edit Mode ");
         let block = Block::bordered()
             .title(title)
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let fields: Vec<ListItem> = self
-            .list
-            .iter()
-            .enumerate()
-            .map(|(idx, field)| {
-                let value: Vec<Span> = if Some(idx) == selected {
-                    self.input.as_ref().map_or_else(
-                        || vec![Span::from(format!("[ {} ]", field.value))],
-                        |value| {
-                            vec![
-                                Span::raw(format!("[ {value}")),
-                                Span::raw(" ").reversed(),
-                                Span::raw(" ]"),
-                            ]
-                        },
-                    )
-                } else {
-                    vec![format!("  {}", field.value).into()]
-                };
+        let error_height = u16::from(self.error.is_some());
 
-                let mut line = Line::raw(format!("[ {: <width$}] ", field.label, width = 20));
-                line.extend(value);
+        let layout = Layout::default()
+            .constraints(vec![Constraint::Length(error_height), Constraint::Fill(1)])
+            .split(Block::inner(&block, area));
 
-                let mut lines: Vec<Line> = vec![line];
+        let error_area = layout.first().expect("Malformed layout.");
+        let fields_area = layout.get(1).expect("Malformed layout.");
 
-                if let Some(error) = &field.error {
-                    lines.push(Line::from(vec![
-                        Span::raw(format!("> {: <width$}", "ERROR".to_string(), width = 24))
-                            .italic(),
-                        Span::raw(error).red().italic(),
-                    ]));
-                }
+        let input_binding = self.input.clone();
+        let list = List::new(construct_field_list(
+            &self.list,
+            self.state.selected(),
+            input_binding.as_ref(),
+        ))
+        .highlight_symbol(" > ")
+        .highlight_spacing(HighlightSpacing::Always)
+        .repeat_highlight_symbol(true);
 
-                ListItem::from(lines)
-            })
-            .collect();
-
-        let list = List::new(fields)
-            .highlight_symbol(" > ")
-            .highlight_spacing(HighlightSpacing::Always)
-            .repeat_highlight_symbol(true)
-            .block(block);
-
-        StatefulWidget::render(list, area, buf, &mut self.state);
+        self.render_error(*error_area, buf);
+        StatefulWidget::render(list, *fields_area, buf, &mut self.state);
+        block.render(area, buf);
     }
 }

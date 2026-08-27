@@ -2,10 +2,14 @@ use std::error::Error;
 
 use chrono::{Datelike, NaiveDate};
 use ordinal::ToOrdinal;
-use ratatui::{text::Line, widgets::List};
+use ratatui::{
+    style::Stylize,
+    text::{Line, Span},
+    widgets::{List, ListItem},
+};
 use rustpass::{PassphraseConfig, PassphraseGenerator};
 
-use crate::models::{Account, ContactInfo};
+use crate::models::{Account, ContactInfo, Field, SecurityQuestion, Service, Shortcut};
 
 pub fn format_current_date(date: NaiveDate) -> String {
     format!(
@@ -83,8 +87,91 @@ pub fn construct_detail_list(account: &Account) -> List<'_> {
     List::new(lines)
 }
 
-pub fn gen_password() -> Result<String, Box<dyn Error>> {
-    let generator = PassphraseGenerator::with_default_wordlist(PassphraseConfig::default())?;
+pub fn gen_password(config: PassphraseConfig) -> Result<String, Box<dyn Error>> {
+    let generator = PassphraseGenerator::with_default_wordlist(config)?;
     let password = generator.generate()?;
     Ok(password)
 }
+
+pub fn construct_field_list<'a>(
+    list: &'a [Field],
+    selected: Option<usize>,
+    input: Option<&'a String>,
+) -> Vec<ListItem<'a>> {
+    list.iter()
+        .enumerate()
+        .map(|(idx, field)| {
+            let value: Vec<Span> = if Some(idx) == selected {
+                input.as_ref().map_or_else(
+                    || vec![Span::from(format!("[ {} ]", field.value))],
+                    |value| {
+                        vec![
+                            Span::raw(format!("[ {value}")),
+                            Span::raw(" ").reversed(),
+                            Span::raw(" ]"),
+                        ]
+                    },
+                )
+            } else {
+                vec![format!("  {}", field.value).into()]
+            };
+
+            let mut line = Line::raw(format!("[ {: <width$}] ", field.label, width = 20));
+            line.extend(value);
+
+            let mut lines: Vec<Line> = vec![line];
+
+            if let Some(error) = &field.error {
+                lines.push(Line::from(vec![
+                    Span::raw(format!("> {: <width$}", "ERROR".to_string(), width = 24)).italic(),
+                    Span::raw(error).red().italic(),
+                ]));
+            }
+
+            ListItem::from(lines)
+        })
+        .collect()
+}
+
+    pub fn validate_service(service: &Service) -> Result<(), String> {
+        if service.name.trim().is_empty() {
+            return Err("The service must have a name.".to_string());
+        }
+        Ok(())
+    }
+
+    pub fn validate_account(account: &Account) -> Result<(), String> {
+        match &account.contact {
+            ContactInfo::Email(email) => {
+                if email.trim().is_empty() {
+                    return Err("Please submit either an email or a username.".to_string());
+                }
+            },
+            ContactInfo::Username(username) => {
+                if username.trim().is_empty() {
+                    return Err("Please submit either an email or a username.".to_string());
+                }
+            },
+            ContactInfo::Both(email, username) => {
+                if email.trim().is_empty() && username.trim().is_empty() {
+                    return Err("Please submit either an email or a username.".to_string());
+                }
+            },
+        }
+        Ok(())
+    }
+
+    pub fn validate_security_question(sq: &SecurityQuestion) -> Result<(), String> {
+        let question = sq.question.trim().is_empty();
+        let answer = sq.answer.trim().is_empty();
+        match (question, answer) {
+            (true, true) => Err("This form is empty - please complete all fields.".to_string()),
+            (true, false) => Err("Please fill out the question field.".to_string()),
+            (false, true) => Err("Please fill out the answer field.".to_string()),
+            (false, false) => Ok(()),
+        }
+    }
+
+    pub const fn validate_shortcut(_shortcut: &Shortcut) -> Result<(), String> {
+        Ok(())
+    }

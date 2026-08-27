@@ -1,6 +1,6 @@
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
-use crate::validators::Validator;
+use crate::{helpers::{validate_account, validate_security_question, validate_service, validate_shortcut}, validators::Validator};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Service {
@@ -62,6 +62,17 @@ pub enum Target {
     Account(Account),
     SecurityQuestion(SecurityQuestion),
     Shortcut(Shortcut),
+}
+
+impl Target {
+    pub fn validate(&self) -> Result<(), String> {
+        match self {
+            Self::Service(service) => validate_service(service),
+            Self::Account(account) => validate_account(account),
+            Self::Shortcut(shortcut) => validate_shortcut(shortcut),
+            Self::SecurityQuestion(security_question) => validate_security_question(security_question),
+        }
+    }
 }
 
 type ApplyFn = fn(&mut Target, &str) -> Result<(), String>;
