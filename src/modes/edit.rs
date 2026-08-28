@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer, layout::{Constraint, Layout, Rect}, style::Stylize, text::{Line, Span}, widgets::{
-        Block, BorderType, HighlightSpacing, List, ListState, Padding, StatefulWidget, Widget,
+        Block, BorderType, Borders, HighlightSpacing, List, ListState, Padding, Paragraph, StatefulWidget, Widget,
     },
 };
 use rustpass::PassphraseConfig;
@@ -153,12 +153,17 @@ impl Edit {
 
     fn render_error(&self, area: Rect, buf: &mut Buffer) {
         if let Some(error) = &self.error {
+            let block = Block::bordered()
+                .border_type(BorderType::LightQuadrupleDashed)
+                .borders(Borders::BOTTOM);
+
             let line = Line::from(vec![
-                Span::raw("     Error: "),
+                Span::raw(" > Form Submission Error: "),
                 Span::raw(error),
             ]).red().bold();
 
-            Widget::render(line, area, buf);
+            let text = Paragraph::new(line).block(block);
+            Widget::render(text, area, buf);
         }
     }
 }
@@ -174,7 +179,10 @@ impl Widget for &mut Edit {
             .padding(Padding::uniform(1))
             .border_type(BorderType::Rounded);
 
-        let error_height = u16::from(self.error.is_some());
+        let error_height = match &self.error.is_some() {
+            true => 2,
+            false => 0,
+        };
 
         let layout = Layout::default()
             .constraints(vec![Constraint::Length(error_height), Constraint::Fill(1)])

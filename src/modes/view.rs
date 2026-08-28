@@ -11,7 +11,7 @@ use ratatui::{
 };
 
 use crate::{
-    helpers::construct_detail_list,
+    helpers::{construct_detail_list, format_detail_field, format_hidden_detail_field},
     models::{Account, ContactInfo, Service},
 };
 
@@ -54,19 +54,29 @@ pub enum Pane {
     Right,
 }
 
-#[derive(Debug, Default, PartialEq, Eq, PartialOrd)]
+#[derive(Debug, Default, PartialEq, Eq, PartialOrd, Clone)]
 pub enum ShowHiddenFields {
     Always,
-    WhenSelected, 
+    WhenSelected,
     #[default]
-    Never, 
+    Never,
+}
+
+impl ShowHiddenFields {
+    const fn next(&self) -> Self {
+        match self {
+            Self::Always => Self::WhenSelected,
+            Self::WhenSelected => Self::Never,
+            Self::Never => Self::Always,
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Detail {
-    label: String,
-    value: String,
-    hidden: bool,
+    pub label: String,
+    pub value: String,
+    pub hidden: bool,
 }
 
 impl View {
@@ -142,6 +152,10 @@ impl View {
                     }
                 }
             }
+            KeyCode::Enter => {
+                self.hide_sensitive = self.hide_sensitive.next();
+                ViewAction::None
+            }
             _ => ViewAction::None,
         }
     }
@@ -190,6 +204,10 @@ impl View {
                         .expect("Index out of range.");
                     ViewAction::Copy(detail.value.clone())
                 }
+            }
+            KeyCode::Enter => {
+                self.hide_sensitive = self.hide_sensitive.next();
+                ViewAction::None
             }
             _ => ViewAction::None,
         }
@@ -247,8 +265,29 @@ impl View {
         StatefulWidget::render(list, area, buf, &mut self.accounts.state);
     }
 
+    //    fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
+    //        let account = self.get_selected_account().clone();
+    //
+    //        let block = Block::bordered()
+    //            .border_type(BorderType::Double)
+    //            .title_alignment(HorizontalAlignment::Center)
+    //            .title("[ [ ACCOUNT DETAILS ] ]")
+    //            .padding(Padding::left(1));
+    //
+    //        let list = construct_detail_list(&account)
+    //            .block(block)
+    //            .highlight_style(
+    //                Style::new()
+    //                    .add_modifier(Modifier::BOLD)
+    //                    .add_modifier(Modifier::REVERSED),
+    //            );
+    //
+    //        StatefulWidget::render(list, area, buf, &mut self.details.state);
+    //    }
+
     fn render_account_details(&mut self, area: Rect, buf: &mut Buffer) {
-        let account = self.get_selected_account().clone();
+        let account = self.get_selected_account();
+        self.details.list = construct_detail_list(account);
 
         let block = Block::bordered()
             .border_type(BorderType::Double)
@@ -256,13 +295,55 @@ impl View {
             .title("[ [ ACCOUNT DETAILS ] ]")
             .padding(Padding::left(1));
 
-        let list = construct_detail_list(&account)
-            .block(block)
+        let width = 19;
+        let detail_list: Vec<ListItem> = self
+            .details
+            .list
+            .iter()
+            .enumerate()
+            .map(|(idx, detail)| {
+                if let Some(selected_idx) = self.details.state.selected() {
+                    let is_selected = idx.eq(&selected_idx);
+                    let field = match (&self.hide_sensitive, is_selected) {
+                        (&ShowHiddenFields::Always, _)
+                        | (&ShowHiddenFields::WhenSelected, true) => {
+                            format_detail_field(detail, width)
+                        }
+                        (&ShowHiddenFields::WhenSelected, false)
+                        | (&ShowHiddenFields::Never, _) => {
+                            if detail.hidden {
+                                format_hidden_detail_field(detail, width)
+                            } else {
+                                format_detail_field(detail, width)
+                            }
+                        }
+                    };
+                    ListItem::new(field)
+                } else {
+                    let field = match &self.hide_sensitive {
+                        ShowHiddenFields::Always => format_detail_field(detail, width),
+                        ShowHiddenFields::WhenSelected | ShowHiddenFields::Never => {
+                            if detail.hidden {
+                                format_hidden_detail_field(detail, width)
+                            } else {
+                                format_detail_field(detail, width)
+                            }
+                        }
+                    };
+                    ListItem::new(field)
+                }
+            })
+            .collect();
+
+        let list = List::new(detail_list)
+            .highlight_symbol(" ")
             .highlight_style(
                 Style::new()
                     .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED),
-            );
+            )
+            .highlight_spacing(HighlightSpacing::Always)
+            .block(block);
 
         StatefulWidget::render(list, area, buf, &mut self.details.state);
     }
@@ -280,6 +361,21 @@ impl View {
     }
 }
 
+fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
+    let block = Block::bordered()
+        .border_type(BorderType::Double)
+        .title_alignment(HorizontalAlignment::Center)
+        .title("[ [ ACCOUNT DETAILS ] ]")
+        .padding(Padding::left(1));
+
+    let lines = vec![
+        Line::from("No accounts found for this service"),
+        Line::from("Press 'n' to add a new one"),
+    ];
+
+    Widget::render(List::new(lines).block(block), area, buf);
+}
+
 impl Widget for &mut View {
     fn render(self, area: Rect, buf: &mut Buffer)
     where
@@ -294,7 +390,7 @@ impl Widget for &mut View {
             .constraints(vec![Constraint::Length(4), Constraint::Fill(1)])
             .split(Block::inner(&block, area));
 
-        let header = main_layout.first().expect("Malformed main layout.");
+        let header_pane = main_layout.first().expect("Malformed main layout.");
         let body = main_layout.get(1).expect("Malformed main layout.");
 
         let body_layout = Layout::default()
@@ -305,7 +401,7 @@ impl Widget for &mut View {
         let account_pane = body_layout.first().expect("Malformed body layout.");
         let details_pane = body_layout.get(1).expect("Malformed body layout.");
 
-        self.render_service_details(*header, buf);
+        self.render_service_details(*header_pane, buf);
         self.render_account_list(*account_pane, buf);
         if self.accounts.list.is_empty() {
             render_empty_accounts_alert(*details_pane, buf);
@@ -315,19 +411,4 @@ impl Widget for &mut View {
 
         block.render(area, buf);
     }
-}
-
-fn render_empty_accounts_alert(area: Rect, buf: &mut Buffer) {
-    let block = Block::bordered()
-        .border_type(BorderType::Double)
-        .title_alignment(HorizontalAlignment::Center)
-        .title("[ [ ACCOUNT DETAILS ] ]")
-        .padding(Padding::left(1));
-
-    let lines = vec![
-        Line::from("No accounts found for this service"),
-        Line::from("Press 'n' to add a new one"),
-    ];
-
-    Widget::render(List::new(lines).block(block), area, buf);
 }

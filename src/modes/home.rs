@@ -1,12 +1,7 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    style::{Modifier, Style},
-    text::{Line, Span},
-    widgets::{
-        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding,
-        StatefulWidget, Widget,
+    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{
+        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
     },
 };
 
@@ -178,8 +173,9 @@ impl Home {
             Span::styled(" ", cursor_style),
         ]);
 
-        Widget::render(line, area, buf);
-        block.render(area, buf);
+        let text = Paragraph::new(line).block(block);
+
+        Widget::render(text, area, buf);
     }
 
     fn get_selected_service(&self) -> &Service {
