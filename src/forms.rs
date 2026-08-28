@@ -1,9 +1,16 @@
 use crate::{
-    applicators::{apply_account_access_token, apply_account_creation_date, apply_account_email, apply_account_last_change, apply_account_passcode, apply_account_password, apply_account_pin, apply_account_username, apply_service_name, apply_service_url, apply_shortcut_sequence, apply_sq_answer, apply_sq_question}, models::{
-    Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
-    }, validators::Validator::{Date, Email, NonEmpty, Numeric, Url},
+    applicators::{
+        apply_account_access_token, apply_account_creation_date, apply_account_email,
+        apply_account_last_change, apply_account_passcode, apply_account_password,
+        apply_account_pin, apply_account_username, apply_service_name, apply_service_url,
+        apply_shortcut_sequence, apply_sq_answer, apply_sq_question,
+    },
+    models::{
+        Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
+    },
+    validators::Validator::{Date, Email, NonEmpty, Numeric, Url},
 };
-use std::clone::Clone;
+use std::{clone::Clone, string::ToString};
 
 pub trait Fields {
     fn fields(&self) -> Vec<Field>;
@@ -17,14 +24,14 @@ impl Fields for Service {
                 value: self.name.clone(),
                 validator: Some(NonEmpty),
                 error: None,
-                apply: apply_service_name
+                apply: apply_service_name,
             },
             Field {
                 label: "Url".to_string(),
                 value: self.url.as_ref().map_or_else(String::new, Clone::clone),
                 validator: Some(Url),
                 error: None,
-                apply: apply_service_url
+                apply: apply_service_url,
             },
         ]
     }
@@ -56,14 +63,20 @@ impl Fields for Account {
             },
             Field {
                 label: "Password".to_string(),
-                value: self.password.clone(),
+                value: self
+                    .password
+                    .as_ref()
+                    .map_or_else(String::new, ToString::to_string),
                 validator: None,
                 error: None,
                 apply: apply_account_password,
             },
             Field {
                 label: "Access Token".to_string(),
-                value: self.access_token.clone(),
+                value: self
+                    .access_token
+                    .as_ref()
+                    .map_or_else(String::new, ToString::to_string),
                 validator: None,
                 error: None,
                 apply: apply_account_access_token,

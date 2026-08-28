@@ -111,6 +111,10 @@ impl App {
                 }
                 EditAction::Quit => self.exit = true,
                 EditAction::Help => self.mode = Help,
+                EditAction::Copy(text) => self
+                    .clipboard
+                    .set_text(text)
+                    .expect("Failed to copy to clipboard."),
                 EditAction::None => {}
                 EditAction::Submit(target) => {
                     // TODO perhaps confirm/discard here?
@@ -125,9 +129,7 @@ impl App {
                         }
                         Target::Service(service) => {
                             if let Some(id) = service.id {
-                                let list = self
-                                    .get_accounts(id)
-                                    .expect("Failed to get accounts.");
+                                let list = self.get_accounts(id).expect("Failed to get accounts.");
                                 Mode::View(View::new(&service, list))
                             } else {
                                 let list = self.get_services().expect("Failed to get services.");

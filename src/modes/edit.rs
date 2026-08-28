@@ -1,7 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::Stylize, text::{Line, Span}, widgets::{
-        Block, BorderType, Borders, HighlightSpacing, List, ListState, Padding, Paragraph, StatefulWidget, Widget,
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::Stylize,
+    text::{Line, Span},
+    widgets::{
+        Block, BorderType, Borders, HighlightSpacing, List, ListState, Padding, Paragraph,
+        StatefulWidget, Widget,
     },
 };
 use rustpass::PassphraseConfig;
@@ -23,6 +28,7 @@ pub struct Edit {
 #[derive(Debug)]
 pub enum EditAction {
     Submit(Target),
+    Copy(String),
     Paste,
     Return,
     Help,
@@ -82,6 +88,17 @@ impl Edit {
                     }
                 }
                 EditAction::None
+            }
+            KeyCode::Char('y') => {
+                if let Some(idx) = self.state.selected() {
+                    let field = self
+                        .list
+                        .get(idx)
+                        .expect("Failed to index into list of fields.");
+                    EditAction::Copy(field.value.clone())
+                } else {
+                    EditAction::None
+                }
             }
             KeyCode::Enter => {
                 let mut target = self.target.clone();
@@ -160,7 +177,9 @@ impl Edit {
             let line = Line::from(vec![
                 Span::raw(" > Form Submission Error: "),
                 Span::raw(error),
-            ]).red().bold();
+            ])
+            .red()
+            .bold();
 
             let text = Paragraph::new(line).block(block);
             Widget::render(text, area, buf);

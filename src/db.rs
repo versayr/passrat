@@ -6,7 +6,7 @@ use xdg::BaseDirectories;
 use crate::{
     app::{App, Mode},
     models::{
-        Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username 
+        Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username,
     },
     modes::{home::Home, lock::Lock},
 };

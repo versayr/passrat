@@ -56,13 +56,21 @@ pub fn apply_account_email(target: &mut Target, email: &str) -> Result<(), Strin
 
 pub fn apply_account_password(target: &mut Target, password: &str) -> Result<(), String> {
     let account = target_is_account(target)?;
-    password.clone_into(&mut account.password);
+    if password.trim().is_empty() {
+        account.password = None;
+    } else {
+        account.password = Some(password.to_string());
+    }
     Ok(())
 }
 
 pub fn apply_account_access_token(target: &mut Target, token: &str) -> Result<(), String> {
     let account = target_is_account(target)?;
-    token.clone_into(&mut account.access_token);
+    if token.trim().is_empty() {
+        account.access_token = None;
+    } else {
+        account.access_token = Some(token.to_string());
+    }
     Ok(())
 }
 

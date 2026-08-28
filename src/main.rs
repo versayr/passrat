@@ -1,6 +1,7 @@
 use crate::app::App;
 
 mod app;
+mod applicators;
 mod confirm_modal;
 mod db;
 mod forms;
@@ -8,7 +9,6 @@ mod helpers;
 mod inputs;
 mod models;
 mod ui;
-mod applicators;
 mod validators;
 mod modes {
     pub mod edit;

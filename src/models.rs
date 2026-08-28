@@ -1,6 +1,9 @@
+use crate::{
+    helpers::{validate_account, validate_security_question, validate_service, validate_shortcut},
+    validators::Validator,
+};
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
-use crate::{helpers::{validate_account, validate_security_question, validate_service, validate_shortcut}, validators::Validator};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Service {
@@ -16,8 +19,8 @@ pub struct Account {
     pub contact: ContactInfo,
     pub last_change: NaiveDate,
     pub creation_date: NaiveDate,
-    pub password: String,
-    pub access_token: String,
+    pub password: Option<String>,
+    pub access_token: Option<String>,
     pub pin: Option<u32>,
     pub passcode: Option<u32>,
 }
@@ -30,8 +33,8 @@ impl Account {
             contact: ContactInfo::default(),
             last_change: Local::now().date_naive(),
             creation_date: Local::now().date_naive(),
-            password: String::new(),
-            access_token: String::new(),
+            password: None,
+            access_token: None,
             pin: None,
             passcode: None,
         }
@@ -70,7 +73,9 @@ impl Target {
             Self::Service(service) => validate_service(service),
             Self::Account(account) => validate_account(account),
             Self::Shortcut(shortcut) => validate_shortcut(shortcut),
-            Self::SecurityQuestion(security_question) => validate_security_question(security_question),
+            Self::SecurityQuestion(security_question) => {
+                validate_security_question(security_question)
+            }
         }
     }
 }

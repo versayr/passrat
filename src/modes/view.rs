@@ -293,7 +293,8 @@ impl View {
             .border_type(BorderType::Double)
             .title_alignment(HorizontalAlignment::Center)
             .title("[ [ ACCOUNT DETAILS ] ]")
-            .padding(Padding::left(1));
+            .padding(Padding::left(1))
+            .padding(Padding::right(1));
 
         let width = 19;
         let detail_list: Vec<ListItem> = self

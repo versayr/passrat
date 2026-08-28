@@ -1,7 +1,12 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
-    buffer::Buffer, layout::{Constraint, Layout, Rect}, style::{Modifier, Style}, text::{Line, Span}, widgets::{
-        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph, StatefulWidget, Widget,
+    buffer::Buffer,
+    layout::{Constraint, Layout, Rect},
+    style::{Modifier, Style},
+    text::{Line, Span},
+    widgets::{
+        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding,
+        Paragraph, StatefulWidget, Widget,
     },
 };
 
