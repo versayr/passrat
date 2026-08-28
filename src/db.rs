@@ -96,14 +96,12 @@ impl Service {
 
 impl Account {
     pub fn from_row(row: &Row<'_>) -> Self {
-        let last_change_string: String = row
-            .get("last_change")
-            .expect("Failed to get last change date.");
-        let creation_date_string: String = row
-            .get("creation_date")
-            .expect("Failed to get last change date.");
+        let last_change_string: String = row.get("last_change").expect("Failed to get last change date.");
+        let creation_date_string: String = row.get("creation_date").expect("Failed to get last change date.");
         let email: Option<EmailAddress> = row.get("email").expect("Failed to get email.");
         let username: Option<Username> = row.get("username").expect("Failed to get username.");
+        let password: Option<String> = row.get("password").expect("Failed to get password.");
+        let access_token: Option<String> = row.get("access_token").expect("Failed to get access_token.");
 
         let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
@@ -112,15 +110,15 @@ impl Account {
         let email: Option<EmailAddress> = email.and_then(|s| (!s.is_empty()).then_some(s));
         let username: Option<Username> = username.and_then(|s| (!s.is_empty()).then_some(s));
         let contact = ContactInfo::from_options(email, username);
+        let password: Option<String> = password.and_then(|s| (!s.is_empty()).then_some(s));
+        let access_token: Option<String> = access_token.and_then(|s| (!s.is_empty()).then_some(s));
 
         Self {
             id: row.get("id").expect("Failed to get row id."),
             service_id: row.get("service_id").expect("Failed to get service id."),
             contact,
-            password: row.get("password").expect("Failed to get password."),
-            access_token: row
-                .get("access_token")
-                .expect("Failed to get access token."),
+            password,
+            access_token,
             last_change,
             creation_date,
             pin: row.get_unwrap("pin"),
