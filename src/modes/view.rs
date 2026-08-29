@@ -1,12 +1,16 @@
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
-    layout::{Constraint, Direction, HorizontalAlignment, Layout, Rect},
+    layout::{
+        Constraint,
+        Direction::{self, Vertical},
+        HorizontalAlignment, Layout, Rect,
+    },
     style::{Modifier, Style},
     text::Line,
     widgets::{
-        Block, BorderType, HighlightSpacing, List, ListItem, ListState, Padding, Paragraph,
-        StatefulWidget, Widget,
+        Block, BorderType, Borders, HighlightSpacing, List, ListItem, ListState, Padding,
+        Paragraph, StatefulWidget, Widget,
     },
 };
 
@@ -65,9 +69,9 @@ pub enum ShowHiddenFields {
 impl ShowHiddenFields {
     const fn next(&self) -> Self {
         match self {
-            Self::Always => Self::WhenSelected,
-            Self::WhenSelected => Self::Never,
-            Self::Never => Self::Always,
+            Self::Never => Self::WhenSelected,
+            Self::WhenSelected => Self::Always,
+            Self::Always => Self::Never,
         }
     }
 }
@@ -296,6 +300,13 @@ impl View {
             .padding(Padding::left(1))
             .padding(Padding::right(1));
 
+        let layout = Layout::default()
+            .direction(Vertical)
+            .constraints(vec![Constraint::Fill(1), Constraint::Length(2)])
+            .split(Block::inner(&block, area));
+        let top = layout.first().expect("Malformed layout.");
+        let bottom = layout.get(1).expect("Malformed layout.");
+
         let width = 19;
         let detail_list: Vec<ListItem> = self
             .details
@@ -343,10 +354,23 @@ impl View {
                     .add_modifier(Modifier::BOLD)
                     .add_modifier(Modifier::REVERSED),
             )
-            .highlight_spacing(HighlightSpacing::Always)
-            .block(block);
+            .highlight_spacing(HighlightSpacing::Always);
 
-        StatefulWidget::render(list, area, buf, &mut self.details.state);
+        let hidden_field_status = match self.hide_sensitive {
+            ShowHiddenFields::Always => "Always",
+            ShowHiddenFields::WhenSelected => "When Selected",
+            ShowHiddenFields::Never => "Never",
+        };
+        let status_line = Paragraph::new(format!(" Show Hidden Fields: {hidden_field_status}"))
+            .block(
+                Block::bordered()
+                    .border_type(BorderType::LightQuadrupleDashed)
+                    .borders(Borders::TOP),
+            );
+
+        StatefulWidget::render(list, *top, buf, &mut self.details.state);
+        Widget::render(status_line, *bottom, buf);
+        block.render(area, buf);
     }
 
     fn get_selected_account(&self) -> &Account {
