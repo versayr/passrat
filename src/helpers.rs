@@ -11,7 +11,7 @@ use rustpass::{PassphraseConfig, PassphraseGenerator};
 
 use crate::{
     models::{Account, ContactInfo, Field, SecurityQuestion, Service, Shortcut},
-    modes::view::Detail,
+    modes::{edit::Input, view::Detail},
 };
 
 pub fn format_current_date(date: NaiveDate) -> String {
@@ -186,7 +186,7 @@ pub fn gen_password(config: PassphraseConfig) -> Result<String, Box<dyn Error>> 
 pub fn construct_field_list<'a>(
     list: &'a [Field],
     selected: Option<usize>,
-    input: Option<&'a String>,
+    input: Option<&'a Input>,
 ) -> Vec<ListItem<'a>> {
     list.iter()
         .enumerate()
@@ -194,9 +194,9 @@ pub fn construct_field_list<'a>(
             let value: Vec<Span> = if Some(idx) == selected {
                 input.as_ref().map_or_else(
                     || vec![Span::from(format!("[ {} ]", field.value))],
-                    |value| {
+                    |input| {
                         vec![
-                            Span::raw(format!("[ {value}")),
+                            Span::raw(format!("[ {}", input.value)),
                             Span::raw(" ").reversed(),
                             Span::raw(" ]"),
                         ]

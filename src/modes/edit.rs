@@ -21,8 +21,23 @@ pub struct Edit {
     pub target: Target,
     pub list: Vec<Field>,
     pub state: ListState,
-    pub input: Option<String>,
+    pub input: Option<Input>,
     error: Option<String>,
+}
+
+#[derive(Default, Clone, Debug)]
+pub struct Input {
+    pub index: usize,
+    pub value: String,
+}
+
+impl Input {
+    const fn from(value: String) -> Self {
+        Self {
+            index: value.len(),
+            value,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -69,22 +84,21 @@ impl Edit {
             KeyCode::Char('e' | 'i' | 'c') => {
                 if let Some(idx) = self.state.selected() {
                     let field = self.list.get(idx).expect("Failed to index into list.");
-                    self.input = Some(field.value.clone());
+                    self.input = Some(Input::from(field.value.clone()));
                 }
                 EditAction::None
             }
             KeyCode::Char('p') => {
-                self.input = Some(String::new());
+                self.input = Some(Input::default());
                 EditAction::Paste
             }
             KeyCode::Char('P') => {
                 if let Some(idx) = self.state.selected() {
+                    let password = gen_password(PassphraseConfig::default())
+                        .expect("Failed to generate password.");
                     let field = self.list.get(idx).expect("Failed to index into list.");
                     if field.label == "Password" {
-                        self.input = Some(
-                            gen_password(PassphraseConfig::default())
-                                .expect("Failed to generate password."),
-                        );
+                        self.input = Some(Input::from(password));
                     }
                 }
                 EditAction::None
@@ -130,12 +144,14 @@ impl Edit {
                 self.input
                     .as_mut()
                     .expect("Input string does not exist.")
+                    .value
                     .pop();
             }
             KeyCode::Char(ch) => {
                 self.input
                     .as_mut()
                     .expect("Input string does not exist.")
+                    .value
                     .push(ch);
             }
             _ => {}
@@ -144,7 +160,7 @@ impl Edit {
 
     fn handle_validation(&mut self) {
         if let Some(idx) = self.state.selected() {
-            let value = self.input.as_ref().expect("No input is set.").clone();
+            let value = self.input.as_ref().expect("No input is set.").value.clone();
             let is_valid = self
                 .list
                 .get(idx)

@@ -103,7 +103,7 @@ impl App {
                 }
                 EditAction::Paste => {
                     if let Some(ref mut input) = edit.input {
-                        *input = self
+                        input.value = self
                             .clipboard
                             .get_text()
                             .expect("Failed to paste from clipboard.");
