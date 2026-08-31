@@ -302,10 +302,9 @@ impl View {
 
         let layout = Layout::default()
             .direction(Vertical)
-            .constraints(vec![Constraint::Fill(1), Constraint::Length(2)])
-            .split(Block::inner(&block, area));
-        let top = layout.first().expect("Malformed layout.");
-        let bottom = layout.get(1).expect("Malformed layout.");
+            .constraints(vec![Constraint::Fill(1), Constraint::Length(2)]);
+
+        let [top, bottom] = Layout::areas(&layout, Block::inner(&block, area));
 
         let width = 19;
         let detail_list: Vec<ListItem> = self
@@ -368,8 +367,8 @@ impl View {
                     .borders(Borders::TOP),
             );
 
-        StatefulWidget::render(list, *top, buf, &mut self.details.state);
-        Widget::render(status_line, *bottom, buf);
+        StatefulWidget::render(list, top, buf, &mut self.details.state);
+        Widget::render(status_line, bottom, buf);
         block.render(area, buf);
     }
 
@@ -411,27 +410,23 @@ impl Widget for &mut View {
             .title(title)
             .border_type(BorderType::Rounded);
 
-        let main_layout = Layout::default()
-            .constraints(vec![Constraint::Length(4), Constraint::Fill(1)])
-            .split(Block::inner(&block, area));
+        let main_layout =
+            Layout::default().constraints(vec![Constraint::Length(4), Constraint::Fill(1)]);
 
-        let header_pane = main_layout.first().expect("Malformed main layout.");
-        let body = main_layout.get(1).expect("Malformed main layout.");
+        let [header_pane, body] = Layout::areas(&main_layout, Block::inner(&block, area));
 
         let body_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)])
-            .split(*body);
+            .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)]);
 
-        let account_pane = body_layout.first().expect("Malformed body layout.");
-        let details_pane = body_layout.get(1).expect("Malformed body layout.");
+       let [account_pane, details_pane] = Layout::areas(&body_layout, body);
 
-        self.render_service_details(*header_pane, buf);
-        self.render_account_list(*account_pane, buf);
+        self.render_service_details(header_pane, buf);
+        self.render_account_list(account_pane, buf);
         if self.accounts.list.is_empty() {
-            render_empty_accounts_alert(*details_pane, buf);
+            render_empty_accounts_alert(details_pane, buf);
         } else {
-            self.render_account_details(*details_pane, buf);
+            self.render_account_details(details_pane, buf);
         }
 
         block.render(area, buf);

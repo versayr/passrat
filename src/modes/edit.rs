@@ -265,11 +265,9 @@ impl Widget for &mut Edit {
         };
 
         let layout = Layout::default()
-            .constraints(vec![Constraint::Length(error_height), Constraint::Fill(1)])
-            .split(Block::inner(&block, area));
+            .constraints(vec![Constraint::Length(error_height), Constraint::Fill(1)]);
 
-        let error_area = layout.first().expect("Malformed layout.");
-        let fields_area = layout.get(1).expect("Malformed layout.");
+        let [error_area, fields_area] = Layout::areas(&layout, Block::inner(&block, area));
 
         let input_binding = self.input.clone();
         let list = List::new(construct_field_list(
@@ -281,8 +279,8 @@ impl Widget for &mut Edit {
         .highlight_spacing(HighlightSpacing::Always)
         .repeat_highlight_symbol(true);
 
-        self.render_error(*error_area, buf);
-        StatefulWidget::render(list, *fields_area, buf, &mut self.state);
+        self.render_error(error_area, buf);
+        StatefulWidget::render(list, fields_area, buf, &mut self.state);
         block.render(area, buf);
     }
 }

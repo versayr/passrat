@@ -228,22 +228,20 @@ impl Widget for &mut Home {
         };
 
         let layout = Layout::default()
-            .constraints(vec![Constraint::Length(filter_height), Constraint::Fill(1)])
-            .split(Block::inner(&block, area));
-
-        let header = layout.first().expect("Malformed layout.");
-        let body = layout.get(1).expect("Malformed layout.");
+            .constraints(vec![Constraint::Length(filter_height), Constraint::Fill(1)]);
+            // .split(Block::inner(&block, area));
+        let [header, body] = Layout::areas(&layout, Block::inner(&block, area));
 
         match (self.set_filter, self.filter.is_empty()) {
-            (true, _) | (_, false) => self.render_filter(*header, buf),
+            (true, _) | (_, false) => self.render_filter(header, buf),
             _ => {}
         }
 
         if self.services.list.is_empty() {
-            Widget::render(construct_empty_services_alert(), *body, buf);
+            Widget::render(construct_empty_services_alert(), body, buf);
         } else {
             let list = self.construct_service_list();
-            StatefulWidget::render(list, *body, buf, &mut self.services.state);
+            StatefulWidget::render(list, body, buf, &mut self.services.state);
         }
 
         block.render(area, buf);
