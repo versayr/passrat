@@ -38,6 +38,37 @@ impl Input {
             value,
         }
     }
+
+    const fn backward(&mut self) {
+        if self.index > 0 {
+            self.index = self.index.saturating_sub(1);
+        }
+    }
+
+    const fn forward(&mut self) {
+        if self.index < self.value.len() {
+            self.index = self.index.saturating_add(1);
+        }
+    }
+
+    fn delete(&mut self) {
+        if self.index < self.value.len() {
+            self.value.remove(self.index);
+        }
+    }
+
+    fn backspace(&mut self) {
+        if self.index > 0 {
+            let idx = self.index.saturating_sub(1);
+            self.value.remove(idx);
+            self.index = self.index.saturating_sub(1);
+        }
+    }
+
+    fn insert(&mut self, ch: char) {
+        self.value.insert(self.index, ch);
+        self.index = self.index.saturating_add(1);
+    }
 }
 
 #[derive(Debug)]
@@ -144,15 +175,29 @@ impl Edit {
                 self.input
                     .as_mut()
                     .expect("Input string does not exist.")
-                    .value
-                    .pop();
+                    .backspace();
+            }
+            KeyCode::Delete => {
+                self.input
+                    .as_mut()
+                    .expect("Input string does not exist.")
+                    .delete();
             }
             KeyCode::Char(ch) => {
                 self.input
                     .as_mut()
                     .expect("Input string does not exist.")
-                    .value
-                    .push(ch);
+                    .insert(ch);
+            }
+            KeyCode::Left => {
+                self.input.as_mut()
+                    .expect("Input string does not exist.")
+                    .backward();
+            }
+            KeyCode::Right => {
+                self.input.as_mut()
+                    .expect("Input string does not exist.")
+                    .forward();
             }
             _ => {}
         }

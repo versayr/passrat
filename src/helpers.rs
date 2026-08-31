@@ -195,11 +195,21 @@ pub fn construct_field_list<'a>(
                 input.as_ref().map_or_else(
                     || vec![Span::from(format!("[ {} ]", field.value))],
                     |input| {
-                        vec![
-                            Span::raw(format!("[ {}", input.value)),
-                            Span::raw(" ").reversed(),
-                            Span::raw(" ]"),
-                        ]
+                        let (prefix, suffix) = input.value.split_at(input.index);
+                        if suffix.is_empty() {
+                            vec![
+                                Span::raw(format!("[ {prefix}")),
+                                Span::raw(" ").reversed(),
+                                Span::raw(" ]".to_string()),
+                            ]
+                        } else {
+                            let (selected_char, suffix) = suffix.split_at(1);
+                            vec![
+                                Span::raw(format!("[ {prefix}")),
+                                Span::raw(selected_char.to_string()).reversed(),
+                                Span::raw(format!("{suffix} ]")),
+                            ]
+                        }
                     },
                 )
             } else {
