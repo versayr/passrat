@@ -90,7 +90,7 @@ impl Home {
                 }
                 HomeAction::None
             }
-            KeyCode::Enter => {
+            KeyCode::Enter | KeyCode::Char('l') => {
                 if self.services.list.is_empty() {
                     HomeAction::None
                 } else {
@@ -229,7 +229,7 @@ impl Widget for &mut Home {
 
         let layout = Layout::default()
             .constraints(vec![Constraint::Length(filter_height), Constraint::Fill(1)]);
-            // .split(Block::inner(&block, area));
+
         let [header, body] = Layout::areas(&layout, Block::inner(&block, area));
 
         match (self.set_filter, self.filter.is_empty()) {

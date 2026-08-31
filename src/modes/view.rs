@@ -107,8 +107,8 @@ impl View {
         }
 
         match event.code {
-            KeyCode::Char('q') | KeyCode::Esc => ViewAction::Return,
-            KeyCode::Char('h' | '?') => ViewAction::Help,
+            KeyCode::Char('q' | 'h') | KeyCode::Esc => ViewAction::Return,
+            KeyCode::Char('?') => ViewAction::Help,
             KeyCode::Char('j') | KeyCode::Down => {
                 self.accounts.state.select_next();
                 ViewAction::None
@@ -184,7 +184,7 @@ impl View {
                 self.details.state.select_previous();
                 ViewAction::None
             }
-            KeyCode::Char('e') => {
+            KeyCode::Char('e' | 'l') => {
                 if self.accounts.state.selected().is_none() {
                     ViewAction::None
                 } else {

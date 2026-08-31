@@ -5,14 +5,14 @@ use crate::{
 use chrono::{Local, NaiveDate};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Service {
     pub id: Option<u32>,
     pub name: String,
     pub url: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Account {
     pub id: Option<u32>,
     pub service_id: u32,
@@ -41,7 +41,7 @@ impl Account {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[allow(dead_code)]
 pub struct SecurityQuestion {
     pub id: Option<u32>,
@@ -50,7 +50,7 @@ pub struct SecurityQuestion {
     pub answer: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[allow(dead_code)]
 pub struct Shortcut {
     pub id: Option<u32>,
@@ -59,7 +59,7 @@ pub struct Shortcut {
     pub sequence: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Target {
     Service(Service),
     Account(Account),
@@ -91,7 +91,7 @@ pub struct Field {
     pub apply: ApplyFn,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 pub enum ContactInfo {
     Email(EmailAddress),
     Username(Username),

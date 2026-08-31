@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use chrono::{Datelike, NaiveDate};
-use ordinal::ToOrdinal;
 use ratatui::{
     style::Stylize,
     text::{Line, Span},
@@ -19,9 +18,24 @@ pub fn format_current_date(date: NaiveDate) -> String {
         "{}, {} {}, {}",
         date.format("%A"),
         date.format("%B"),
-        date.day().to_ordinal_string(),
+        to_ordinal(date.day()),
         date.format("%Y")
     )
+}
+
+fn to_ordinal(n: u32) -> String {
+    let n = n % 100;
+    if (11..=13).contains(&n) {
+        return format!("{n}th");
+    }
+
+    match n % 10 {
+        1 => format!("{n}st"),
+        2 => format!("{n}nd"),
+        3 => format!("{n}rd"),
+        _ => format!("{n}th"),
+    }
+
 }
 
 // pub fn construct_detail_field(label: &str, value: &str, width: usize) -> Line<'static> {

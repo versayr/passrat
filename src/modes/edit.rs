@@ -1,3 +1,4 @@
+use chrono::Local;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     buffer::Buffer,
@@ -102,7 +103,7 @@ impl Edit {
         }
 
         match event.code {
-            KeyCode::Char('h' | '?') => EditAction::Help,
+            KeyCode::Char('?') => EditAction::Help,
             KeyCode::Esc | KeyCode::Char('q') => EditAction::Return,
             KeyCode::Char('j') | KeyCode::Down => {
                 self.state.select_next();
@@ -154,6 +155,9 @@ impl Edit {
                     self.error = Some(error);
                     EditAction::None
                 } else {
+                    if let Target::Account(ref mut account) = target {
+                        account.last_change = Local::now().date_naive();
+                    }
                     EditAction::Submit(target)
                 }
             }
