@@ -1,5 +1,5 @@
-use chrono::NaiveDate;
 use email_address_parser::EmailAddress as ParsedEmailAddress;
+use jiff::civil::Date;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
@@ -40,7 +40,7 @@ fn validate_url(s: &str) -> Result<(), String> {
 }
 
 fn validate_date(s: &str) -> Result<(), String> {
-    NaiveDate::parse_from_str(s.trim(), "%Y-%m-%d")
+    Date::strptime("%Y-%m-%d", s.trim())
         .map(|_| ())
         .map_err(|_| "Incorrect date format - use YYYY-MM-DD.".to_string())
 }
