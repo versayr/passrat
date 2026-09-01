@@ -5,7 +5,6 @@ edition = "2024"
 
 [dependencies]
 arboard = "3.6.1"
-chrono = { version = "0.4.45", features = ["serde"] }
 color-eyre = "0.6.5"
 crossterm = "0.29.0"
 email-address-parser = "2.0.2"
