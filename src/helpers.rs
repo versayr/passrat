@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use chrono::{Datelike, NaiveDate};
+use jiff::civil::Date;
 use ratatui::{
     style::Stylize,
     text::{Line, Span},
@@ -13,13 +13,14 @@ use crate::{
     modes::{edit::Input, view::Detail},
 };
 
-pub fn format_current_date(date: NaiveDate) -> String {
+pub fn format_current_date(date: Date) -> String {
+    let day: u32 = date.day().try_into().expect("Unexpected overflow.");
     format!(
         "{}, {} {}, {}",
-        date.format("%A"),
-        date.format("%B"),
-        to_ordinal(date.day()),
-        date.format("%Y")
+        date.strftime("%A"),
+        date.strftime("%B"),
+        to_ordinal(day),
+        date.strftime("%Y")
     )
 }
 

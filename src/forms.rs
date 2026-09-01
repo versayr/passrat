@@ -101,14 +101,14 @@ impl Fields for Account {
             },
             Field {
                 label: "Last Change".to_string(),
-                value: self.last_change.format("%Y-%m-%d").to_string(),
+                value: self.last_change.to_string(),
                 validator: Some(Date),
                 error: None,
                 apply: apply_account_last_change,
             },
             Field {
                 label: "Account Created".to_string(),
-                value: self.creation_date.format("%Y-%m-%d").to_string(),
+                value: self.creation_date.to_string(),
                 validator: Some(Date),
                 error: None,
                 apply: apply_account_creation_date,

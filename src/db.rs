@@ -1,4 +1,4 @@
-use chrono::NaiveDate;
+use jiff::civil::Date;
 use rusqlite::{Connection, Error, Row, fallible_iterator::FallibleIterator, params};
 use std::path::Path;
 use xdg::BaseDirectories;
@@ -103,9 +103,9 @@ impl Account {
         let password: Option<String> = row.get("password").expect("Failed to get password.");
         let access_token: Option<String> = row.get("access_token").expect("Failed to get access_token.");
 
-        let last_change = NaiveDate::parse_from_str(&last_change_string, "%Y-%m-%d")
+        let last_change = Date::strptime("%Y-%m-%d", &last_change_string)
             .expect("Failed to parse last change date (expected YYYY-MM-DD).");
-        let creation_date = NaiveDate::parse_from_str(&creation_date_string, "%Y-%m-%d")
+        let creation_date = Date::strptime("%Y-%m-%d", &creation_date_string)
             .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
         let email: Option<EmailAddress> = email.and_then(|s| (!s.is_empty()).then_some(s));
         let username: Option<Username> = username.and_then(|s| (!s.is_empty()).then_some(s));
@@ -301,8 +301,8 @@ impl App {
             params![
                 account.service_id,
                 username,
-                account.last_change.format("%Y-%m-%d").to_string(),
-                account.creation_date.format("%Y-%m-%d").to_string(),
+                account.last_change.to_string(),
+                account.creation_date.to_string(),
                 email,
                 account.password,
                 account.access_token,
@@ -339,8 +339,8 @@ impl App {
             params![
                 account.service_id,
                 username,
-                account.last_change.format("%Y-%m-%d").to_string(),
-                account.creation_date.format("%Y-%m-%d").to_string(),
+                account.last_change.to_string(),
+                account.creation_date.to_string(),
                 email,
                 account.password,
                 account.access_token,

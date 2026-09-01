@@ -1,5 +1,5 @@
-use chrono::Local;
 use crossterm::event::{KeyCode, KeyEvent};
+use jiff::Zoned;
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
@@ -156,7 +156,7 @@ impl Edit {
                     EditAction::None
                 } else {
                     if let Target::Account(ref mut account) = target {
-                        account.last_change = Local::now().date_naive();
+                        account.last_change = Zoned::now().into();
                     }
                     EditAction::Submit(target)
                 }

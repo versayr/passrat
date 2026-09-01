@@ -1,4 +1,6 @@
-use chrono::NaiveDate;
+use std::str::FromStr;
+
+use jiff::civil::Date;
 
 use crate::models::{
     Account,
@@ -88,15 +90,17 @@ pub fn apply_account_passcode(target: &mut Target, passcode: &str) -> Result<(),
 
 pub fn apply_account_last_change(target: &mut Target, date: &str) -> Result<(), String> {
     let account = target_is_account(target)?;
-    account.last_change = NaiveDate::parse_from_str(date, "%Y-%m-%d")
-        .map_err(|error| format!("Invalid date format: {error}"))?;
+    account.last_change = Date::from_str(date).map_err(|error| format!("Invalid date format: {error}"))?;
+    // account.last_change = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+    //     .map_err(|error| format!("Invalid date format: {error}"))?;
     Ok(())
 }
 
 pub fn apply_account_creation_date(target: &mut Target, date: &str) -> Result<(), String> {
     let account = target_is_account(target)?;
-    account.creation_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")
-        .map_err(|error| format!("Invalid date format: {error}"))?;
+    account.creation_date = Date::from_str(date).map_err(|error| format!("Invalid date format: {error}"))?;
+//     account.creation_date = NaiveDate::parse_from_str(date, "%Y-%m-%d")
+//         .map_err(|error| format!("Invalid date format: {error}"))?;
     Ok(())
 }
 

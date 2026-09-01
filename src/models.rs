@@ -2,7 +2,7 @@ use crate::{
     helpers::{validate_account, validate_security_question, validate_service, validate_shortcut},
     validators::Validator,
 };
-use chrono::{Local, NaiveDate};
+use jiff::{Zoned, civil::Date};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -17,8 +17,8 @@ pub struct Account {
     pub id: Option<u32>,
     pub service_id: u32,
     pub contact: ContactInfo,
-    pub last_change: NaiveDate,
-    pub creation_date: NaiveDate,
+    pub last_change: Date,
+    pub creation_date: Date,
     pub password: Option<String>,
     pub access_token: Option<String>,
     pub pin: Option<u32>,
@@ -31,8 +31,8 @@ impl Account {
             id: None,
             service_id,
             contact: ContactInfo::default(),
-            last_change: Local::now().date_naive(),
-            creation_date: Local::now().date_naive(),
+            last_change: Zoned::now().into(),
+            creation_date: Zoned::now().into(),
             password: None,
             access_token: None,
             pin: None,
