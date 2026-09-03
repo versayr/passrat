@@ -60,7 +60,7 @@ impl App {
                 HomeAction::Quit => self.exit = true,
                 HomeAction::Help => self.mode = Mode::Help,
                 HomeAction::Delete(service) => {
-                    self.remove_service(&service);
+                    let _ = self.remove_service(&service);
                     let list = self
                         .get_services()
                         .expect("Failed to refresh service list.");

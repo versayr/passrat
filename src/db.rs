@@ -1,5 +1,5 @@
 use jiff::civil::Date;
-use rusqlite::{Connection, Error, Row, fallible_iterator::FallibleIterator, params, types::Type};
+use rusqlite::{fallible_iterator::FallibleIterator, params, types::Type, Connection, Error, Row};
 use std::path::Path;
 use xdg::BaseDirectories;
 
@@ -14,6 +14,7 @@ use crate::{
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
     let conn = Connection::open(path)?;
     conn.pragma_update(None, "key", password)?;
+    conn.pragma_update(None, "foreign_keys", true)?;
 
     conn.query_row("SELECT COUNT(*) FROM services", [], |r| {
         r.get::<usize, i64>(0)
@@ -28,18 +29,17 @@ pub fn init_database(password: &str) -> Result<(), Error> {
         .expect("Failed to get db.");
     let conn = Connection::open(path)?;
     conn.pragma_update(None, "key", password)?;
+    conn.pragma_update(None, "foreign_keys", true)?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS services (
+    conn.execute_batch(
+        "
+        CREATE TABLE IF NOT EXISTS services (
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL UNIQUE,
             url TEXT
-        )",
-        [],
-    )?;
+        );
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS accounts (
+        CREATE TABLE IF NOT EXISTS accounts (
             id INTEGER PRIMARY KEY,
             service_id INTEGER NOT NULL,
             username TEXT,
@@ -50,31 +50,40 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             creation_date TEXT NOT NULL, 
             pin INTEGER,
             passcode INTEGER,
-            UNIQUE (service_id, username),
-        )",
-        [],
-    )?;
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS security_questions (
+            UNIQUE (service_id, username),
+
+            FOREIGN KEY (service_id)
+                REFERENCES services(id)
+                ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS security_questions (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
             question TEXT NOT NULL,
-            answer TEXT NOT NULL
-            UNIQUE (account_id, question),
-        )",
-        [],
-    )?;
+            answer TEXT NOT NULL,
 
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS shortcuts (
+            UNIQUE (account_id, question),
+
+            FOREIGN KEY (account_id)
+                REFERENCES accounts(id)
+                ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS shortcuts (
             id INTEGER PRIMARY KEY,
             account_id INTEGER NOT NULL,
             field TEXT NOT NULL,
-            sequence TEXT NOT NULL UNIQUE
+            sequence TEXT NOT NULL UNIQUE,
+
             UNIQUE (account_id, field),
-        )",
-        [],
+
+            FOREIGN KEY (account_id)
+                REFERENCES accounts(id)
+                ON DELETE CASCADE
+        );
+        ",
     )?;
 
     Ok(())
@@ -251,22 +260,15 @@ impl App {
         Ok(())
     }
 
-    pub fn remove_service(&mut self, service: &Service) {
+    pub fn remove_service(&mut self, service: &Service) -> Result<(), Error> {
         let conn = self
             .conn
             .as_mut()
             .expect("Failed to get database connection.");
 
-        let tx = conn
-            .transaction()
-            .expect("Failed to initialize database transaction.");
+        conn.execute("DELETE FROM services WHERE id = ?1", [&service.id])?;
 
-        tx.execute("DELETE FROM accounts WHERE service_id = ?1", [&service.id])
-            .expect("Failed to delete accounts of this service.");
-        tx.execute("DELETE FROM services WHERE id = ?1", [&service.id])
-            .expect("Failed to delete this service.");
-
-        tx.commit().expect("Failed to commit database transaction.");
+        Ok(())
     }
 
     pub fn add_account(&mut self, account: &Account) -> Result<(), Error> {
@@ -279,7 +281,7 @@ impl App {
         };
 
         conn.execute(
-            r"
+            "
             INSERT INTO accounts (
                 service_id,
                 username,
@@ -290,8 +292,7 @@ impl App {
                 access_token,
                 pin,
                 passcode)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
-            ",
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 account.service_id,
                 username,
@@ -318,7 +319,7 @@ impl App {
         };
 
         conn.execute(
-            r"
+            "
             UPDATE accounts
             SET
                 service_id = ?1,
