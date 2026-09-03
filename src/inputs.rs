@@ -86,7 +86,7 @@ impl App {
                 ViewAction::Help => self.mode = Help,
                 ViewAction::Quit => self.exit = true,
                 ViewAction::Delete(account) => {
-                    self.remove_account(&account);
+                    let _ = self.remove_account(&account);
                     let service = self
                         .get_service(account.service_id)
                         .expect("Failed to get service.");
@@ -117,34 +117,35 @@ impl App {
                     .expect("Failed to copy to clipboard."),
                 EditAction::None => {}
                 EditAction::Submit(target) => {
-                    // TODO perhaps confirm/discard here?
-                    self.handle_target(&target);
-                    // if error with submitting SQL, set self.mode = Mode::Edit(edit) with errors
-                    // populated
-                    // TODO send to previous mode (store on app? Option<Mode> ?)
-                    self.mode = match target {
-                        Target::Shortcut(_) | Target::SecurityQuestion(_) => {
-                            let list = self.get_services().expect("Failed to get services.");
-                            Mode::Home(Home::new(list))
-                        }
-                        Target::Service(service) => {
-                            if let Some(id) = service.id {
-                                let list = self.get_accounts(id).expect("Failed to get accounts.");
-                                Mode::View(View::new(&service, list))
-                            } else {
+                    if let Err(error) = self.handle_target(&target)
+                        && let Mode::Edit(edit) = &mut self.mode
+                    {
+                        edit.error = Some(error.to_string());
+                    } else {
+                        self.mode = match target {
+                            Target::Shortcut(_) | Target::SecurityQuestion(_) => {
                                 let list = self.get_services().expect("Failed to get services.");
                                 Mode::Home(Home::new(list))
                             }
-                        }
-                        Target::Account(account) => {
-                            let service_id = account.service_id;
-                            let list = self
-                                .get_accounts(service_id)
-                                .expect("Failed to get accounts.");
-                            let service = self
-                                .get_service(service_id)
-                                .expect("Failed to get service.");
-                            Mode::View(View::new(&service, list))
+                            Target::Service(service) => {
+                                if let Some(id) = service.id {
+                                    let list = self.get_accounts(id).expect("Failed to get accounts.");
+                                    Mode::View(View::new(&service, list))
+                                } else {
+                                    let list = self.get_services().expect("Failed to get services.");
+                                    Mode::Home(Home::new(list))
+                                }
+                            }
+                            Target::Account(account) => {
+                                let service_id = account.service_id;
+                                let list = self
+                                    .get_accounts(service_id)
+                                    .expect("Failed to get accounts.");
+                                let service = self
+                                    .get_service(service_id)
+                                    .expect("Failed to get service.");
+                                Mode::View(View::new(&service, list))
+                            }
                         }
                     }
                 }

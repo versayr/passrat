@@ -24,7 +24,7 @@ pub struct App {
     pub should_clear: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Mode {
     Lock(Lock),
     Home(Home),

@@ -36,7 +36,6 @@ fn to_ordinal(n: u32) -> String {
         3 => format!("{n}rd"),
         _ => format!("{n}th"),
     }
-
 }
 
 // pub fn construct_detail_field(label: &str, value: &str, width: usize) -> Line<'static> {

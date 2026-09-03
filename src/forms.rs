@@ -1,11 +1,6 @@
 use crate::{
-    applicators::{
-        apply_account_access_token, apply_account_creation_date, apply_account_email,
-        apply_account_last_change, apply_account_passcode, apply_account_password,
-        apply_account_pin, apply_account_username, apply_service_name, apply_service_url,
-        apply_shortcut_sequence, apply_sq_answer, apply_sq_question,
-    }, models::{
-        Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
+    models::{
+        Account, Applicator, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
     }, validators::Validator::{Date, Email, NoWhitespace, NonEmpty, Numeric, Url},
 };
 use std::{clone::Clone, string::ToString};
@@ -22,14 +17,14 @@ impl Fields for Service {
                 value: self.name.clone(),
                 validator: Some(NonEmpty),
                 error: None,
-                apply: apply_service_name,
+                applicator: Applicator::ServiceName,
             },
             Field {
                 label: "Url".to_string(),
                 value: self.url.as_ref().map_or_else(String::new, Clone::clone),
                 validator: Some(Url),
                 error: None,
-                apply: apply_service_url,
+                applicator: Applicator::ServiceUrl,
             },
         ]
     }
@@ -50,14 +45,14 @@ impl Fields for Account {
                 value: String::from(username),
                 validator: None,
                 error: None,
-                apply: apply_account_username,
+                applicator: Applicator::AccountUsername,
             },
             Field {
                 label: "Email".to_string(),
                 value: String::from(email),
                 validator: Some(Email),
                 error: None,
-                apply: apply_account_email,
+                applicator: Applicator::AccountEmail,
             },
             Field {
                 label: "Password".to_string(),
@@ -67,7 +62,7 @@ impl Fields for Account {
                     .map_or_else(String::new, ToString::to_string),
                 validator: Some(NoWhitespace),
                 error: None,
-                apply: apply_account_password,
+                applicator: Applicator::AccountPassword,
             },
             Field {
                 label: "Access Token".to_string(),
@@ -77,7 +72,7 @@ impl Fields for Account {
                     .map_or_else(String::new, ToString::to_string),
                 validator: None,
                 error: None,
-                apply: apply_account_access_token,
+                applicator: Applicator::AccountAccessToken,
             },
             Field {
                 label: "PIN".to_string(),
@@ -86,7 +81,7 @@ impl Fields for Account {
                     .map_or_else(String::new, |pin| pin.clone().to_string()),
                 validator: Some(Numeric),
                 error: None,
-                apply: apply_account_pin,
+                applicator: Applicator::AccountPIN,
             },
             Field {
                 label: "Passcode".to_string(),
@@ -95,21 +90,21 @@ impl Fields for Account {
                     .map_or_else(String::new, |passcode| passcode.clone().to_string()),
                 validator: Some(Numeric),
                 error: None,
-                apply: apply_account_passcode,
+                applicator: Applicator::AccountPasscode,
             },
             Field {
                 label: "Last Change".to_string(),
                 value: self.last_change.to_string(),
                 validator: Some(Date),
                 error: None,
-                apply: apply_account_last_change,
+                applicator: Applicator::AccountLastChange,
             },
             Field {
                 label: "Account Created".to_string(),
                 value: self.creation_date.to_string(),
                 validator: Some(Date),
                 error: None,
-                apply: apply_account_creation_date,
+                applicator: Applicator::AccountCreationDate,
             },
         ]
     }
@@ -123,14 +118,14 @@ impl Fields for SecurityQuestion {
                 value: self.question.clone(),
                 validator: Some(NonEmpty),
                 error: None,
-                apply: apply_sq_question,
+                applicator: Applicator::SqQuestion,
             },
             Field {
                 label: "Answer".to_string(),
                 value: self.answer.clone(),
                 validator: Some(NonEmpty),
                 error: None,
-                apply: apply_sq_answer,
+                applicator: Applicator::SqAnswer,
             },
         ]
     }
@@ -143,7 +138,7 @@ impl Fields for Shortcut {
             value: self.sequence.clone(),
             validator: Some(NonEmpty),
             error: None,
-            apply: apply_shortcut_sequence,
+            applicator: Applicator::ShortcutSequence,
         }]
     }
 }

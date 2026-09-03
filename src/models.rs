@@ -2,7 +2,7 @@ use crate::{
     helpers::{validate_account, validate_security_question, validate_service, validate_shortcut},
     validators::Validator,
 };
-use jiff::{Zoned, civil::Date};
+use jiff::{civil::Date, Zoned};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize, Eq, PartialEq)]
@@ -80,15 +80,38 @@ impl Target {
     }
 }
 
-type ApplyFn = fn(&mut Target, &str) -> Result<(), String>;
+// type ApplyFn = fn(&mut Target, &str) -> Result<(), String>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Field {
     pub label: String,
     pub value: String,
     pub error: Option<String>,
     pub validator: Option<Validator>,
-    pub apply: ApplyFn,
+    pub applicator: Applicator,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Applicator {
+    ServiceName,
+    ServiceUrl,
+    AccountUsername,
+    AccountEmail,
+    AccountPassword,
+    AccountAccessToken,
+    AccountPIN,
+    AccountPasscode,
+    AccountLastChange,
+    AccountCreationDate,
+    SqQuestion,
+    SqAnswer,
+    ShortcutSequence,
+}
+
+impl Field {
+    pub fn apply(&self, target: &mut Target) -> Result<(), String> {
+        self.applicator.apply(target, &self.value)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]

@@ -19,7 +19,7 @@ use crate::{
     models::{Account, ContactInfo, Service},
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct View {
     pub service: Service,
     pub accounts: AccountList,
@@ -28,13 +28,13 @@ pub struct View {
     pub hide_sensitive: ShowHiddenFields,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct AccountList {
     pub list: Vec<Account>,
     pub state: ListState,
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct DetailList {
     pub list: Vec<Detail>,
     pub state: ListState,
@@ -76,7 +76,7 @@ impl ShowHiddenFields {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct Detail {
     pub label: String,
     pub value: String,

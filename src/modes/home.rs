@@ -12,14 +12,14 @@ use ratatui::{
 
 use crate::models::Service;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct Home {
     pub filter: String,
     pub services: ServiceList,
     set_filter: bool,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq)]
 pub struct ServiceList {
     pub list: Vec<Service>,
     pub state: ListState,

@@ -17,16 +17,16 @@ use crate::{
     models::{Field, Target},
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Edit {
     pub target: Target,
     pub list: Vec<Field>,
     pub state: ListState,
     pub input: Option<Input>,
-    error: Option<String>,
+    pub error: Option<String>,
 }
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Clone, Debug, PartialEq, Eq)]
 pub struct Input {
     pub index: usize,
     pub value: String,
@@ -149,7 +149,7 @@ impl Edit {
             KeyCode::Enter => {
                 let mut target = self.target.clone();
                 for field in &self.list {
-                    (field.apply)(&mut target, &field.value).expect("Failed to apply fields.");
+                    field.apply(&mut target).expect("Failed to apply fields.");
                 }
                 if let Err(error) = target.validate() {
                     self.error = Some(error);
@@ -200,12 +200,14 @@ impl Edit {
                     .insert(ch);
             }
             KeyCode::Left => {
-                self.input.as_mut()
+                self.input
+                    .as_mut()
                     .expect("Input string does not exist.")
                     .backward();
             }
             KeyCode::Right => {
-                self.input.as_mut()
+                self.input
+                    .as_mut()
                     .expect("Input string does not exist.")
                     .forward();
             }
