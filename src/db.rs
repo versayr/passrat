@@ -1,5 +1,5 @@
 use jiff::civil::Date;
-use rusqlite::{Connection, Error, Row, fallible_iterator::FallibleIterator, params};
+use rusqlite::{fallible_iterator::FallibleIterator, params, types::Type, Connection, Error, Row};
 use std::path::Path;
 use xdg::BaseDirectories;
 
@@ -36,8 +36,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             url TEXT
         )",
         [],
-    )
-    .expect("Failed to create service table.");
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS accounts (
@@ -53,8 +52,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             passcode INTEGER
         )",
         [],
-    )
-    .expect("Failed to create accounts table.");
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS security_questions (
@@ -64,8 +62,7 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             answer TEXT NOT NULL
         )",
         [],
-    )
-    .expect("Failed to create security question table.");
+    )?;
 
     conn.execute(
         "CREATE TABLE IF NOT EXISTS shortcuts (
@@ -75,55 +72,54 @@ pub fn init_database(password: &str) -> Result<(), Error> {
             sequence TEXT NOT NULL UNIQUE
         )",
         [],
-    )
-    .expect("Failed to create security question table.");
+    )?;
 
     Ok(())
 }
 
 impl Service {
-    pub fn from_row(row: &Row<'_>) -> Self {
-        let url: Option<String> = row.get("url").expect("Failed to get url.");
-        let url = url.and_then(|s| (!s.is_empty()).then_some(s));
+    pub fn from_row(row: &Row<'_>) -> Result<Self, Error> {
+        let url: Option<String> = row.get("url")?;
+        let url = url.filter(|url| !url.is_empty());
 
-        Self {
-            id: row.get("id").expect("Failed to get row id."),
-            name: row.get("name").expect("Failed to get row name."),
+        Ok(Self {
+            id: row.get("id")?,
+            name: row.get("name")?,
             url,
-        }
+        })
     }
 }
 
 impl Account {
-    pub fn from_row(row: &Row<'_>) -> Self {
-        let last_change_string: String = row.get("last_change").expect("Failed to get last change date.");
-        let creation_date_string: String = row.get("creation_date").expect("Failed to get last change date.");
-        let email: Option<EmailAddress> = row.get("email").expect("Failed to get email.");
-        let username: Option<Username> = row.get("username").expect("Failed to get username.");
-        let password: Option<String> = row.get("password").expect("Failed to get password.");
-        let access_token: Option<String> = row.get("access_token").expect("Failed to get access_token.");
-
+    pub fn from_row(row: &Row<'_>) -> Result<Self, Error> {
+        let last_change_string: String = row.get("last_change")?;
+        let creation_date_string: String = row.get("creation_date")?;
         let last_change = Date::strptime("%Y-%m-%d", &last_change_string)
-            .expect("Failed to parse last change date (expected YYYY-MM-DD).");
+            .map_err(|error| Error::FromSqlConversionFailure(6, Type::Text, Box::new(error)))?;
         let creation_date = Date::strptime("%Y-%m-%d", &creation_date_string)
-            .expect("Failed to parse account creation date (expected YYYY-MM-DD).");
-        let email: Option<EmailAddress> = email.and_then(|s| (!s.is_empty()).then_some(s));
-        let username: Option<Username> = username.and_then(|s| (!s.is_empty()).then_some(s));
-        let contact = ContactInfo::from_options(email, username);
-        let password: Option<String> = password.and_then(|s| (!s.is_empty()).then_some(s));
-        let access_token: Option<String> = access_token.and_then(|s| (!s.is_empty()).then_some(s));
+            .map_err(|error| Error::FromSqlConversionFailure(7, Type::Text, Box::new(error)))?;
 
-        Self {
-            id: row.get("id").expect("Failed to get row id."),
-            service_id: row.get("service_id").expect("Failed to get service id."),
+        let email: Option<EmailAddress> = row.get("email")?;
+        let username: Option<Username> = row.get("username")?;
+        let contact = ContactInfo::from_options(
+            email.filter(|email| !email.is_empty()),
+            username.filter(|username| !username.is_empty()),
+        );
+
+        let password: Option<String> = row.get("password")?;
+        let access_token: Option<String> = row.get("access_token")?;
+
+        Ok(Self {
+            id: row.get("id")?,
+            service_id: row.get("service_id")?,
             contact,
-            password,
-            access_token,
+            password: password.filter(|password| !password.is_empty()),
+            access_token: access_token.filter(|access_token| !access_token.is_empty()),
             last_change,
             creation_date,
-            pin: row.get_unwrap("pin"),
-            passcode: row.get_unwrap("passcode"),
-        }
+            pin: row.get("pin")?,
+            passcode: row.get("passcode")?,
+        })
     }
 }
 
@@ -169,13 +165,7 @@ impl App {
             .prepare("SELECT id, name, url FROM services ORDER BY name")?;
 
         let result = stmt
-            .query_map([], |row| {
-                Ok(Service {
-                    id: row.get(0).expect("Failed to get service id."),
-                    name: row.get(1).expect("Failed to get service name."),
-                    url: row.get(2).expect("Failed to get service url."),
-                })
-            })?
+            .query_map([], Service::from_row)?
             .collect::<Result<Vec<Service>, _>>()?;
 
         Ok(result)
@@ -190,7 +180,7 @@ impl App {
             ))
             .expect("Failed to prepare statement.")
             .query([])?
-            .map(|row| Ok(Account::from_row(row)))
+            .map(Account::from_row)
             .collect()
     }
 
@@ -227,7 +217,7 @@ impl App {
             .expect("Failed to connect to database.")
             .prepare(&format!("SELECT * FROM services WHERE id = {id} LIMIT 1"))
             .expect("Failed to prepare statement.")
-            .query_one([], |row| Ok(Service::from_row(row)))
+            .query_one([], Service::from_row)
     }
 
     pub fn add_service(&mut self, service: &Service) {
