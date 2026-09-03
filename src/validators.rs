@@ -10,6 +10,7 @@ pub enum Validator {
     Date,
     Numeric,
     NonEmpty,
+    NoWhitespace,
 }
 
 impl Validator {
@@ -20,6 +21,7 @@ impl Validator {
             Self::Date => validate_date(value),
             Self::Numeric => validate_numeric(value),
             Self::NonEmpty => validate_non_empty(value),
+            Self::NoWhitespace => validate_no_whitespace(value),
         }
     }
 }
@@ -59,6 +61,14 @@ fn validate_numeric(s: &str) -> Result<(), String> {
 fn validate_non_empty(s: &str) -> Result<(), String> {
     if s.trim().is_empty() {
         Err("This value must not be empty.".to_string())
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_no_whitespace(s: &str) -> Result<(), String> {
+    if s.contains(char::is_whitespace) {
+        Err("This field cannot contain whitespace.".to_string())
     } else {
         Ok(())
     }

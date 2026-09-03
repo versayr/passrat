@@ -134,7 +134,7 @@ impl View {
                 let id = self.service.id.expect("No service id found");
                 ViewAction::Edit(Account::new(id))
             }
-            KeyCode::Delete => {
+            KeyCode::Delete | KeyCode::Char('d' | 'x' | 'D') => {
                 if self.accounts.state.selected().is_none() {
                     ViewAction::None
                 } else {
@@ -419,7 +419,7 @@ impl Widget for &mut View {
             .direction(Direction::Horizontal)
             .constraints(vec![Constraint::Percentage(30), Constraint::Percentage(70)]);
 
-       let [account_pane, details_pane] = Layout::areas(&body_layout, body);
+        let [account_pane, details_pane] = Layout::areas(&body_layout, body);
 
         self.render_service_details(header_pane, buf);
         self.render_account_list(account_pane, buf);

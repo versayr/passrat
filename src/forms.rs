@@ -4,11 +4,9 @@ use crate::{
         apply_account_last_change, apply_account_passcode, apply_account_password,
         apply_account_pin, apply_account_username, apply_service_name, apply_service_url,
         apply_shortcut_sequence, apply_sq_answer, apply_sq_question,
-    },
-    models::{
+    }, models::{
         Account, ContactInfo, EmailAddress, Field, SecurityQuestion, Service, Shortcut, Username,
-    },
-    validators::Validator::{Date, Email, NonEmpty, Numeric, Url},
+    }, validators::Validator::{Date, Email, NoWhitespace, NonEmpty, Numeric, Url},
 };
 use std::{clone::Clone, string::ToString};
 
@@ -67,7 +65,7 @@ impl Fields for Account {
                     .password
                     .as_ref()
                     .map_or_else(String::new, ToString::to_string),
-                validator: None,
+                validator: Some(NoWhitespace),
                 error: None,
                 apply: apply_account_password,
             },

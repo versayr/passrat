@@ -174,7 +174,13 @@ impl Edit {
                 }
                 self.input = None;
             }
-            KeyCode::Enter => self.handle_validation(),
+            KeyCode::Enter => {
+                if let Some(ref mut input) = self.input {
+                    input.value = input.value.trim().to_string();
+                    input.index = input.value.len();
+                }
+                self.handle_validation();
+            }
             KeyCode::Backspace => {
                 self.input
                     .as_mut()
