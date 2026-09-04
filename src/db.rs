@@ -4,11 +4,10 @@ use std::path::Path;
 use xdg::BaseDirectories;
 
 use crate::{
-    app::{App, Mode},
+    app::App,
     models::{
         Account, ContactInfo, EmailAddress, SecurityQuestion, Service, Shortcut, Target, Username,
     },
-    modes::{home::Home, lock::Lock},
 };
 
 pub fn connect_database(path: &Path, password: &str) -> Result<Connection, Error> {
@@ -135,40 +134,23 @@ impl Account {
     }
 }
 
+pub fn submit_password(password: &str) -> Result<Connection, String> {
+    let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
+    path.create_data_directory("")
+        .map_err(|error| format!("Failed to create data directory: {error}"))?;
+
+    let Some(path) = path.find_data_file("vault.db") else {
+        init_database(password)
+            .map_err(|error| format!("Failed to create database: {error}"))?;
+
+        return Err("Database created - please enter passphrase again.".to_string());
+    };
+
+    connect_database(&path, password)
+        .map_err(|_| "Incorrect password - please try again.".to_string())
+}
+
 impl App {
-    pub fn submit_password(&mut self, password: &str) {
-        let path: BaseDirectories = BaseDirectories::with_prefix("passrat");
-        path.create_data_directory("")
-            .expect("Failed to create data directory.");
-
-        if let Some(path) = path.find_data_file("vault.db") {
-            if let Ok(conn) = connect_database(&path, password) {
-                self.conn = Some(conn);
-                if let Ok(list) = self.get_services() {
-                    self.mode = Mode::Home(Home::new(list));
-                } else {
-                    self.mode = Mode::Lock(Lock::new(
-                        String::new(),
-                        "Login error - please try again".into(),
-                    ));
-                }
-            } else {
-                self.mode = Mode::Lock(Lock::new(
-                    String::new(),
-                    "Incorrect password - please try again.".into(),
-                ));
-                // TODO fix this hacky bs
-                self.should_clear = true;
-            }
-        } else {
-            let _ = init_database(password);
-            self.mode = Mode::Lock(Lock::new(
-                String::new(),
-                "Database created - please enter passphrase again.".into(),
-            ));
-        }
-    }
-
     pub fn get_services(&mut self) -> Result<Vec<Service>, Error> {
         self.conn
             .as_mut()

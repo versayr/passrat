@@ -65,7 +65,7 @@ impl Home {
                 }
             }
             KeyCode::Char('q') => HomeAction::Quit,
-            KeyCode::Char('h' | '?') => HomeAction::Help,
+            KeyCode::Char('?') => HomeAction::Help,
             KeyCode::Char('j') | KeyCode::Down => {
                 self.services.state.select_next();
                 HomeAction::None

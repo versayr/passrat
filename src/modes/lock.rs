@@ -15,7 +15,7 @@ pub struct Lock {
 
 #[derive(Debug)]
 pub enum LockAction {
-    SubmitPassword,
+    SubmitPassword(String),
     Quit,
     None,
 }
@@ -28,7 +28,7 @@ impl Lock {
     pub fn handle_inputs(&mut self, event: KeyEvent) -> LockAction {
         match event.code {
             KeyCode::Esc => LockAction::Quit,
-            KeyCode::Enter => LockAction::SubmitPassword,
+            KeyCode::Enter => LockAction::SubmitPassword(self.input.clone()),
             KeyCode::Backspace => {
                 self.input.pop();
                 LockAction::None

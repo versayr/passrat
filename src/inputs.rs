@@ -4,10 +4,7 @@ use crate::{
     app::{
         App,
         Mode::{self, Help},
-    },
-    forms::Fields,
-    models::Target,
-    modes::{
+    }, db::submit_password, forms::Fields, models::Target, modes::{
         edit::{Edit, EditAction},
         home::{Home, HomeAction},
         lock::LockAction::{self},
@@ -28,18 +25,24 @@ impl App {
     #[allow(clippy::too_many_lines)]
     fn handle_key_events(&mut self, event: KeyEvent) {
         match &mut self.mode {
-            Mode::Lock(lock) => {
-                let mut password = None;
-
-                match lock.handle_inputs(event) {
-                    LockAction::Quit => self.exit = true,
-                    LockAction::SubmitPassword => password = Some(lock.input.clone()),
-                    LockAction::None => {}
+            Mode::Lock(lock) => match lock.handle_inputs(event) {
+                LockAction::Quit => self.exit = true,
+                LockAction::SubmitPassword(password) => {
+                    match submit_password(&password) {
+                        Ok(conn) => {
+                            self.conn = Some(conn);
+                            if let Ok(services) = self.get_services() {
+                                self.mode = Mode::Home(Home::new(services));
+                            }
+                        }
+                        Err(alert) => {
+                            self.should_clear = true;
+                            lock.input.clear();
+                            lock.alert = alert;
+                        },
+                    }
                 }
-
-                if let Some(password) = password {
-                    self.submit_password(&password);
-                }
+                LockAction::None => {}
             }
             Mode::Home(home) => match home.handle_inputs(event) {
                 HomeAction::View(service) => {
