@@ -198,15 +198,9 @@ impl App {
 
     pub fn handle_target(&mut self, target: &Target) -> Result<(), Error> {
         match &target {
-            Target::Service(service) => {
-                if service.id.is_some() {
-                    self.update_service(service)?;
-                } else {
-                    self.add_service(service)?;
-                }
-                let list = self.get_services()?;
-                self.mode = Mode::Home(Home::new(list));
-                Ok(())
+            Target::Service(service) => match service.id {
+                Some(_) => self.update_service(service),
+                None => self.add_service(service),
             }
             Target::Account(account) => match account.id {
                 Some(_) => self.update_account(account),
@@ -292,7 +286,8 @@ impl App {
                 access_token,
                 pin,
                 passcode)
-                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                ",
             params![
                 account.service_id,
                 username,

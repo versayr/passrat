@@ -91,7 +91,14 @@ impl Home {
                 HomeAction::None
             }
             KeyCode::Enter | KeyCode::Char('l') => {
-                if self.services.list.is_empty() {
+                if self.services.list.is_empty()
+                    | !self.services.list.iter().any(|service| {
+                        service
+                            .name
+                            .to_lowercase()
+                            .contains(&self.filter.to_lowercase())
+                    })
+                {
                     HomeAction::None
                 } else {
                     let service = self.get_selected_service();
